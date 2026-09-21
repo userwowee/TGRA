@@ -38,12 +38,27 @@ jobs:
           }
           EOF
           npx cap add android
+          echo "org.gradle.java.home=$JAVA_HOME" >> android/gradle.properties
+
+          # Force Gradle resolution strategy to resolve duplicate Kotlin stdlib classes
+          cat << 'EOF' >> android/build.gradle
+
+          allprojects {
+              configurations.all {
+                  resolutionStrategy {
+                      force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
+                      force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22'
+                      force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'
+                  }
+              }
+          }
+          EOF
 
       - name: Compile Debug APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug -Dorg.gradle.java.home=$JAVA_HOME
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
