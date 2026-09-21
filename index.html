@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Panic Button</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background-color: #0d1117;
+      color: #c9d1d9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .accent-card {
+      background-color: #161b22;
+      border: 1px solid #30363d;
+    }
+  </style>
+</head>
+<body class="p-4 max-w-md mx-auto min-h-screen flex flex-col justify-between select-none">
+
+  <div>
+    <!-- Top Header -->
+    <header class="mb-4">
+      <p class="text-[11px] font-bold tracking-wider text-red-500 uppercase">Instant Follow-Up Capture</p>
+      <h1 class="text-3xl font-extrabold text-white tracking-tight">Panic Button</h1>
+      <p class="text-xs text-gray-400 mt-1">Type or dictate a name, adjust the time only if needed, then tap Call, Remind, or Email.</p>
+      
+      <!-- Utility Bar -->
+      <div class="flex gap-2 mt-3 text-[11px]">
+        <button id="notifyBtn" class="bg-gray-800 hover:bg-gray-700 text-gray-300 px-2 py-1 rounded border border-gray-700">Enable notifications</button>
+        <button id="testAlertBtn" class="bg-gray-800 hover:bg-gray-700 text-gray-300 px-2 py-1 rounded border border-gray-700">Send test notification</button>
+      </div>
+    </header>
+
+    <!-- Action Trigger Buttons -->
+    <div class="grid grid-cols-3 gap-2 mb-4">
+      <button id="btnCall" class="bg-[#10b981] hover:bg-[#059669] active:scale-95 text-white font-bold py-3 rounded-lg text-sm transition">Call</button>
+      <button id="btnRemind" class="bg-[#f97316] hover:bg-[#ea580c] active:scale-95 text-white font-bold py-3 rounded-lg text-sm transition">Remind</button>
+      <button id="btnEmail" class="bg-[#0284c7] hover:bg-[#0369a1] active:scale-95 text-white font-bold py-3 rounded-lg text-sm transition">Email</button>
+    </div>
+
+    <!-- Input Section -->
+    <div class="mb-4">
+      <label class="block text-[10px] font-bold uppercase tracking-wider text-teal-400 mb-1">Customer or Task</label>
+      <div class="relative">
+        <input id="taskInput" type="text" placeholder="Type or dictate a name" class="w-full bg-[#0d1117] border-2 border-teal-500 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-teal-400 placeholder-gray-500" />
+        <button id="micBtn" class="absolute right-2 top-2 text-gray-400 hover:text-teal-400 p-1 text-xs">🎤</button>
+      </div>
+    </div>
+
+    <!-- Interval Selectors -->
+    <div class="grid grid-cols-4 gap-1.5 mb-2 text-xs">
+      <button class="time-btn bg-gray-800 text-gray-300 py-1.5 rounded border border-gray-700 active:bg-gray-700" data-mins="10">10 min</button>
+      <button class="time-btn bg-gray-800 text-gray-300 py-1.5 rounded border border-gray-700 active:bg-gray-700" data-mins="30">30 min</button>
+      <button class="time-btn bg-gray-700 text-white font-semibold py-1.5 rounded border border-teal-500 active:bg-gray-700" data-mins="60">1 hour</button>
+      <button class="time-btn bg-gray-800 text-gray-300 py-1.5 rounded border border-gray-700 active:bg-gray-700" data-mins="120">2 hours</button>
+      <button class="time-btn bg-gray-800 text-gray-300 py-1.5 rounded border border-gray-700 active:bg-gray-700" data-mins="240">4 hours</button>
+      <button class="time-btn bg-gray-800 text-gray-300 py-1.5 rounded border border-gray-700 active:bg-gray-700" data-mins="eod">End of day</button>
+      <button class="time-btn bg-gray-800 text-gray-300 py-1.5 rounded border border-gray-700 active:bg-gray-700" data-mins="tomorrow">Tomorrow 9 AM</button>
+      <button class="time-btn bg-gray-800 text-gray-300 py-1.5 rounded border border-gray-700 active:bg-gray-700" data-mins="custom">Custom</button>
+    </div>
+    <p class="text-[11px] text-gray-500 mb-6" id="intervalDescription">1 hour is selected by default. Alerts persist until marked done.</p>
+
+    <!-- Task List -->
+    <div>
+      <div class="flex justify-between items-center mb-3">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-red-500">Pending</h2>
+        <span id="pendingCount" class="bg-red-950 text-red-400 border border-red-800 text-[10px] font-bold px-1.5 py-0.5 rounded-full">0</span>
+      </div>
+      <p class="text-base font-bold text-white mb-2">People waiting</p>
+
+      <div id="taskList" class="space-y-3">
+        <!-- Injected via JavaScript -->
+      </div>
+    </div>
+  </div>
+
+  <footer class="mt-8 text-center text-xs text-gray-600">
+    <p>Local-First Offline Engine</p>
+  </footer>
+
+  <script>
+    let selectedDuration = 60;
+    const STORAGE_KEY = 'panic_button_tasks';
+
+    function getTasks() {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    }
+
+    function saveTasks(tasks) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+      renderTasks();
+    }
+
+    function calculateTargetTime(duration) {
+      const now = new Date();
+      if (duration === 'eod') {
+        now.setHours(18, 0, 0, 0);
+        return now.getTime();
+      }
+      if (duration === 'tomorrow') {
+        now.setDate(now.getDate() + 1);
+        now.setHours(9, 0, 0, 0);
+        return now.getTime();
+      }
+      if (duration === 'custom') {
+        const promptMins = prompt("Enter reminder delay in minutes:", "15");
+        const parsed = parseInt(promptMins, 10);
+        return now.getTime() + (isNaN(parsed) ? 15 : parsed) * 60000;
+      }
+      return now.getTime() + (parseInt(duration, 10) * 60000);
+    }
+
+    function addTask(type) {
+      const input = document.getElementById('taskInput');
+      const title = input.value.trim();
+      if (!title) {
+        input.focus();
+        return;
+      }
+
+      const tasks = getTasks();
+      const newTask = {
+        id: Date.now(),
+        type: type,
+        title: title,
+        targetTime: calculateTargetTime(selectedDuration),
+        status: 'pending'
+      };
+
+      tasks.unshift(newTask);
+      saveTasks(tasks);
+      input.value = '';
+    }
+
+    function updateTaskTime(id, extraMinutes) {
+      const tasks = getTasks();
+      const task = tasks.find(t => t.id === id);
+      if (task) {
+        task.targetTime = Date.now() + (extraMinutes * 60000);
+        saveTasks(tasks);
+      }
+    }
+
+    function deleteTask(id) {
+      let tasks = getTasks();
+      tasks = tasks.filter(t => t.id !== id);
+      saveTasks(tasks);
+    }
+
+    function formatTime(timestamp) {
+      const d = new Date(timestamp);
+      return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + ' · ' +
+             d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true });
+    }
+
+    function renderTasks() {
+      const tasks = getTasks().filter(t => t.status === 'pending');
+      const listContainer = document.getElementById('taskList');
+      const countBadge = document.getElementById('pendingCount');
+      countBadge.innerText = tasks.length;
+      listContainer.innerHTML = '';
+
+      if (tasks.length === 0) {
+        listContainer.innerHTML = '<p class="text-xs text-gray-500 py-4 text-center">No pending capture items.</p>';
+        return;
+      }
+
+      tasks.forEach(task => {
+        const typeStyles = {
+          CALL: 'bg-emerald-950 text-emerald-400 border-emerald-800',
+          REMIND: 'bg-orange-950 text-orange-400 border-orange-800',
+          EMAIL: 'bg-sky-950 text-sky-400 border-sky-800'
+        }[task.type] || 'bg-gray-800 text-gray-400 border-gray-700';
+
+        const card = document.createElement('div');
+        card.className = 'accent-card p-3 rounded-lg flex flex-col gap-2';
+        card.innerHTML = `
+          <div class="flex items-start justify-between">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded border ${typeStyles}">${task.type}</span>
+                <span class="text-sm font-bold text-white">${task.title}</span>
+              </div>
+              <p class="text-xs text-red-400 font-semibold">${formatTime(task.targetTime)}</p>
+              <p class="text-[10px] text-gray-500 mt-0.5">Persistence: Active</p>
+            </div>
+          </div>
+          <div class="grid grid-cols-4 gap-1.5 pt-2 border-t border-gray-800 text-xs">
+            <button onclick="deleteTask(${task.id})" class="bg-[#10b981] hover:bg-[#059669] text-white py-1 rounded font-medium">Done</button>
+            <button onclick="updateTaskTime(${task.id}, 60)" class="bg-[#0284c7] hover:bg-[#0369a1] text-white py-1 rounded font-medium">+1 hour</button>
+            <button onclick="updateTaskTime(${task.id}, 1440)" class="bg-[#0284c7] hover:bg-[#0369a1] text-white py-1 rounded font-medium">Tomorrow</button>
+            <button onclick="deleteTask(${task.id})" class="bg-gray-800 hover:bg-gray-700 text-red-400 border border-gray-700 py-1 rounded font-medium">Cancel</button>
+          </div>
+        `;
+        listContainer.appendChild(card);
+      });
+    }
+
+    // Interval button handling
+    document.querySelectorAll('.time-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.time-btn').forEach(b => {
+          b.className = 'time-btn bg-gray-800 text-gray-300 py-1.5 rounded border border-gray-700 active:bg-gray-700';
+        });
+        btn.className = 'time-btn bg-gray-700 text-white font-semibold py-1.5 rounded border border-teal-500 active:bg-gray-700';
+        selectedDuration = btn.getAttribute('data-mins');
+      });
+    });
+
+    // Capture triggers
+    document.getElementById('btnCall').addEventListener('click', () => addTask('CALL'));
+    document.getElementById('btnRemind').addEventListener('click', () => addTask('REMIND'));
+    document.getElementById('btnEmail').addEventListener('click', () => addTask('EMAIL'));
+
+    // Speech-to-text
+    const micBtn = document.getElementById('micBtn');
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      micBtn.addEventListener('click', () => {
+        recognition.start();
+        micBtn.classList.add('text-red-500');
+      });
+
+      recognition.onresult = (event) => {
+        const text = event.results[0][0].transcript;
+        document.getElementById('taskInput').value = text;
+        micBtn.classList.remove('text-red-500');
+      };
+
+      recognition.onerror = () => micBtn.classList.remove('text-red-500');
+      recognition.onend = () => micBtn.classList.remove('text-red-500');
+    } else {
+      micBtn.style.display = 'none';
+    }
+
+    // Web Notification handlers
+    document.getElementById('notifyBtn').addEventListener('click', async () => {
+      if ('Notification' in window) {
+        const perm = await Notification.requestPermission();
+        alert('Notification permission: ' + perm);
+      }
+    });
+
+    document.getElementById('testAlertBtn').addEventListener('click', () => {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('Panic Button Alert', { body: 'Test notification triggered successfully.' });
+      } else {
+        alert('Test alert triggered (Permissions not granted).');
+      }
+    });
+
+    // Boot
+    renderTasks();
+  </script>
+</body>
+</html>
