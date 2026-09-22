@@ -3,261 +3,639 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Panic Button</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>The Great Reminder App</title>
+  
+  <!-- Fonts: Roboto & Material Symbols Rounded -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,600,0..1,0" />
+
   <style>
-    body {
-      background-color: #0d1117;
-      color: #c9d1d9;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      -webkit-tap-highlight-color: transparent;
+    /* Material 3 Expressive Light Amber Token Definitions */
+    :root {
+      --md-sys-color-primary: #8B5000;
+      --md-sys-color-on-primary: #FFFFFF;
+      --md-sys-color-primary-container: #FFDCC2;
+      --md-sys-color-on-primary-container: #2C1600;
+      --md-sys-color-secondary: #725A44;
+      --md-sys-color-secondary-container: #F6DFC8;
+      --md-sys-color-on-secondary-container: #271905;
+      --md-sys-color-tertiary-container: #D5EDC0;
+      --md-sys-color-on-tertiary-container: #0E2004;
+      --md-sys-color-surface: #FFF8F5;
+      --md-sys-color-surface-container-low: #FCF1EA;
+      --md-sys-color-surface-container: #F7ECE4;
+      --md-sys-color-surface-container-high: #F3E6DE;
+      --md-sys-color-surface-container-highest: #EDE0D8;
+      --md-sys-color-on-surface: #211A14;
+      --md-sys-color-on-surface-variant: #51443B;
+      --md-sys-color-outline: #83746A;
+      --md-sys-color-outline-variant: #D6C3B6;
+      --md-sys-color-error: #B3261E;
+      --md-sys-color-on-error: #FFFFFF;
+
+      --shape-corner-btn: 10px;
+      --shape-corner-inner: 8px;
+      --shape-corner-sheet: 28px;
     }
-    .accent-card {
-      background-color: #161b22;
-      border: 1px solid #30363d;
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      background-color: #211a14;
+      font-family: 'Roboto', sans-serif;
+      color: var(--md-sys-color-on-surface);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    /* Screen Frame (412x892dp portrait container) */
+    .screen-container {
+      width: 100%;
+      max-width: 412px;
+      min-height: 100vh;
+      background-color: var(--md-sys-color-surface);
+      position: relative;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    /* Top App Bar (64dp) */
+    .top-app-bar {
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      background-color: var(--md-sys-color-surface);
+      z-index: 10;
+    }
+    .top-app-bar .title {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      color: var(--md-sys-color-on-surface);
+      flex: 1;
+      margin-left: 12px;
+    }
+    .icon-btn {
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      background: transparent;
+      border-radius: 50%;
+      color: var(--md-sys-color-on-surface);
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .icon-btn:active {
+      background: var(--md-sys-color-surface-container-high);
+      transform: scale(0.96);
+    }
+
+    /* Main Scrollable Canvas */
+    .content-canvas {
+      padding: 8px 16px 140px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex: 1;
+    }
+
+    /* Connected Button Group Standard Rows */
+    .button-row {
+      display: flex;
+      flex-direction: row;
+      gap: 4px;
+      width: 100%;
+    }
+
+    /* Button Foundations */
+    .m3-btn {
+      flex: 1;
+      height: 52px;
+      border: none;
+      outline: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-family: 'Roboto', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.15s;
+    }
+    .m3-btn .material-symbols-rounded {
+      font-size: 18px;
+    }
+    .m3-btn:active {
+      transform: scale(0.96);
+    }
+
+    /* Inner Adjoining Corners (Connected Button Group) */
+    .button-row .m3-btn:first-child {
+      border-radius: var(--shape-corner-btn) var(--shape-corner-inner) var(--shape-corner-inner) var(--shape-corner-btn);
+    }
+    .button-row .m3-btn:not(:first-child):not(:last-child) {
+      border-radius: var(--shape-corner-inner);
+    }
+    .button-row .m3-btn:last-child {
+      border-radius: var(--shape-corner-inner) var(--shape-corner-btn) var(--shape-corner-btn) var(--shape-corner-inner);
+    }
+
+    /* Button Theme Roles */
+    .btn-elevated {
+      background-color: var(--md-sys-color-surface);
+      color: var(--md-sys-color-primary);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+    }
+    .btn-tonal {
+      background-color: var(--md-sys-color-secondary-container);
+      color: var(--md-sys-color-on-secondary-container);
+    }
+    .btn-filled {
+      background-color: var(--md-sys-color-primary);
+      color: var(--md-sys-color-on-primary);
+    }
+    .btn-outlined {
+      background-color: var(--md-sys-color-surface);
+      border: 1px solid var(--md-sys-color-outline-variant);
+      color: var(--md-sys-color-secondary);
+    }
+
+    /* Active Time Selector State */
+    .btn-selected {
+      border: 2px solid var(--md-sys-color-primary) !important;
+      font-weight: 900 !important;
+    }
+
+    /* Filled Text Field (56dp) */
+    .input-box {
+      height: 56px;
+      background-color: var(--md-sys-color-surface-container-highest);
+      border-radius: 8px 8px 0 0;
+      border-bottom: 2px solid var(--md-sys-color-outline);
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      gap: 10px;
+      margin: 4px 0;
+      transition: border-bottom-color 0.2s;
+    }
+    .input-box:focus-within {
+      border-bottom-color: var(--md-sys-color-primary);
+      background-color: var(--md-sys-color-surface-container-high);
+    }
+    .input-box .material-symbols-rounded {
+      color: var(--md-sys-color-on-surface-variant);
+      font-size: 20px;
+    }
+    .input-box input {
+      flex: 1;
+      height: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      font-family: 'Roboto', sans-serif;
+      font-size: 14px;
+      color: var(--md-sys-color-on-surface);
+    }
+    .input-box input::placeholder {
+      color: var(--md-sys-color-on-surface-variant);
+      font-size: 13px;
+    }
+
+    /* Interval Button Size Tweaks */
+    .time-row .m3-btn {
+      height: 42px;
+      font-size: 11.5px;
+      font-weight: 600;
+    }
+
+    /* Interactive Bottom Sheet */
+    .bottom-sheet {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background-color: var(--md-sys-color-surface-container-low);
+      border-radius: var(--shape-corner-sheet) var(--shape-corner-sheet) 0 0;
+      box-shadow: 0 -4px 16px rgba(0,0,0,0.08);
+      height: 132px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      z-index: 20;
+      transition: height 0.3s cubic-bezier(0.2, 0, 0, 1);
+    }
+    .bottom-sheet.expanded {
+      height: 75vh;
+      cursor: default;
+    }
+    .drag-handle {
+      width: 40px;
+      height: 4px;
+      border-radius: 2px;
+      background-color: var(--md-sys-color-outline);
+      margin: 12px 0 16px 0;
+      opacity: 0.6;
+    }
+    .sheet-header-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--md-sys-color-on-surface);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sheet-badge {
+      font-size: 12px;
+      background: var(--md-sys-color-primary);
+      color: var(--md-sys-color-on-primary);
+      padding: 2px 8px;
+      border-radius: 12px;
+    }
+
+    /* Queue Item List */
+    .queue-container {
+      width: 100%;
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 16px 24px 16px;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .bottom-sheet.expanded .queue-container {
+      display: flex;
+    }
+    .task-card {
+      background: var(--md-sys-color-surface);
+      border: 1px solid var(--md-sys-color-outline-variant);
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .task-meta-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--md-sys-color-on-surface);
+    }
+    .task-meta-sub {
+      font-size: 11px;
+      color: var(--md-sys-color-primary);
+      font-weight: 500;
+    }
+    .card-actions {
+      display: flex;
+      gap: 6px;
+    }
+    .card-act-btn {
+      border: none;
+      background: var(--md-sys-color-secondary-container);
+      color: var(--md-sys-color-on-secondary-container);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .card-act-btn.done {
+      background: #2e7d32;
+      color: #ffffff;
+    }
+
+    /* Toast Confirmation */
+    .toast {
+      position: absolute;
+      top: 72px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background-color: var(--md-sys-color-on-surface);
+      color: var(--md-sys-color-surface);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
+      z-index: 100;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
     }
   </style>
 </head>
-<body class="p-4 max-w-md mx-auto min-h-screen flex flex-col justify-between select-none">
+<body>
 
-  <div>
-    <!-- Top Header -->
-    <header class="mb-4">
-      <p class="text-[11px] font-bold tracking-wider text-red-500 uppercase">Instant Follow-Up Capture</p>
-      <h1 class="text-3xl font-extrabold text-white tracking-tight">Panic Button</h1>
-      <p class="text-xs text-gray-400 mt-1">Type or dictate a name, adjust the time only if needed, then tap Call, Remind, or Email.</p>
-      
-      <!-- Utility Bar -->
-      <div class="flex gap-2 mt-3 text-[11px]">
-        <button id="notifyBtn" class="bg-gray-800 hover:bg-gray-700 text-gray-300 px-2 py-1 rounded border border-gray-700">Enable notifications</button>
-        <button id="testAlertBtn" class="bg-gray-800 hover:bg-gray-700 text-gray-300 px-2 py-1 rounded border border-gray-700">Send test notification</button>
-      </div>
+  <div class="screen-container">
+    
+    <!-- Notification Toast -->
+    <div id="toast" class="toast">Reminder Captured</div>
+
+    <!-- Top App Bar -->
+    <header class="top-app-bar">
+      <button class="icon-btn" id="menuBtn" title="Menu">
+        <span class="material-symbols-rounded">menu</span>
+      </button>
+      <div class="title">The Great Reminder App</div>
+      <button class="icon-btn" id="bellBtn" title="Toggle Notifications">
+        <span class="material-symbols-rounded" id="bellIcon">notifications</span>
+      </button>
     </header>
 
-    <!-- Action Trigger Buttons -->
-    <div class="grid grid-cols-3 gap-2 mb-4">
-      <button id="btnCall" class="bg-[#10b981] hover:bg-[#059669] active:scale-95 text-white font-bold py-3 rounded-lg text-sm transition">Call</button>
-      <button id="btnRemind" class="bg-[#f97316] hover:bg-[#ea580c] active:scale-95 text-white font-bold py-3 rounded-lg text-sm transition">Remind</button>
-      <button id="btnEmail" class="bg-[#0284c7] hover:bg-[#0369a1] active:scale-95 text-white font-bold py-3 rounded-lg text-sm transition">Email</button>
-    </div>
+    <!-- Main Content Canvas -->
+    <main class="content-canvas">
 
-    <!-- Input Section -->
-    <div class="mb-4">
-      <label class="block text-[10px] font-bold uppercase tracking-wider text-teal-400 mb-1">Customer or Task</label>
-      <div class="relative">
-        <input id="taskInput" type="text" placeholder="Type or dictate a name" class="w-full bg-[#0d1117] border-2 border-teal-500 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-teal-400 placeholder-gray-500" />
-        <button id="micBtn" class="absolute right-2 top-2 text-gray-400 hover:text-teal-400 p-1 text-xs">🎤</button>
+      <!-- Action Group Row 1 -->
+      <div class="button-row">
+        <button class="m3-btn btn-elevated" data-action="Think"><span class="material-symbols-rounded">lightbulb</span>Think</button>
+        <button class="m3-btn btn-tonal" data-action="Relax"><span class="material-symbols-rounded">local_bar</span>Relax</button>
+        <button class="m3-btn btn-filled" data-action="Pray"><span class="material-symbols-rounded">self_improvement</span>Pray</button>
       </div>
-    </div>
 
-    <!-- Interval Selectors -->
-    <div class="grid grid-cols-4 gap-1.5 mb-2 text-xs">
-      <button class="time-btn bg-gray-800 text-gray-300 py-1.5 rounded border border-gray-700 active:bg-gray-700" data-mins="10">10 min</button>
-      <button class="time-btn bg-gray-800 text-gray-300 py-1.5 rounded border border-gray-700 active:bg-gray-700" data-mins="30">30 min</button>
-      <button class="time-btn bg-gray-700 text-white font-semibold py-1.5 rounded border border-teal-500 active:bg-gray-700" data-mins="60">1 hour</button>
-      <button class="time-btn bg-gray-800 text-gray-300 py-1.5 rounded border border-gray-700 active:bg-gray-700" data-mins="120">2 hours</button>
-      <button class="time-btn bg-gray-800 text-gray-300 py-1.5 rounded border border-gray-700 active:bg-gray-700" data-mins="240">4 hours</button>
-      <button class="time-btn bg-gray-800 text-gray-300 py-1.5 rounded border border-gray-700 active:bg-gray-700" data-mins="eod">End of day</button>
-      <button class="time-btn bg-gray-800 text-gray-300 py-1.5 rounded border border-gray-700 active:bg-gray-700" data-mins="tomorrow">Tomorrow 9 AM</button>
-      <button class="time-btn bg-gray-800 text-gray-300 py-1.5 rounded border border-gray-700 active:bg-gray-700" data-mins="custom">Custom</button>
-    </div>
-    <p class="text-[11px] text-gray-500 mb-6" id="intervalDescription">1 hour is selected by default. Alerts persist until marked done.</p>
-
-    <!-- Task List -->
-    <div>
-      <div class="flex justify-between items-center mb-3">
-        <h2 class="text-xs font-bold uppercase tracking-wider text-red-500">Pending</h2>
-        <span id="pendingCount" class="bg-red-950 text-red-400 border border-red-800 text-[10px] font-bold px-1.5 py-0.5 rounded-full">0</span>
+      <!-- Action Group Row 2 -->
+      <div class="button-row">
+        <button class="m3-btn btn-elevated" data-action="Call"><span class="material-symbols-rounded">call</span>Call</button>
+        <button class="m3-btn btn-tonal" data-action="Email"><span class="material-symbols-rounded">send</span>Email</button>
+        <button class="m3-btn btn-filled" data-action="Whatsapp"><span class="material-symbols-rounded">phone_in_talk</span>Whatsapp</button>
       </div>
-      <p class="text-base font-bold text-white mb-2">People waiting</p>
 
-      <div id="taskList" class="space-y-3">
-        <!-- Injected via JavaScript -->
+      <!-- Action Group Row 3 -->
+      <div class="button-row">
+        <button class="m3-btn btn-elevated" data-action="Go"><span class="material-symbols-rounded">directions_walk</span>Go</button>
+        <button class="m3-btn btn-tonal" data-action="Buy"><span class="material-symbols-rounded">shopping_cart</span>Buy</button>
+        <button class="m3-btn btn-filled" data-action="Fetch / Send"><span class="material-symbols-rounded">local_shipping</span>Fetch / Send</button>
       </div>
-    </div>
+
+      <!-- Action Group Row 4 -->
+      <div class="button-row">
+        <button class="m3-btn btn-elevated" data-action="Exercise"><span class="material-symbols-rounded">pool</span>Exercise</button>
+        <button class="m3-btn btn-tonal" data-action="Groom"><span class="material-symbols-rounded">brush</span>Groom</button>
+        <button class="m3-btn btn-filled" data-action="Supplement"><span class="material-symbols-rounded">pill</span>Supplement</button>
+      </div>
+
+      <!-- Input Field -->
+      <div class="input-box">
+        <span class="material-symbols-rounded">edit</span>
+        <input type="text" id="taskInput" placeholder="Person, task or item." autocomplete="off" />
+      </div>
+
+      <!-- Time Interval Row 1 (Outlined) -->
+      <div class="button-row time-row">
+        <button class="m3-btn btn-outlined time-btn" data-mins="15">15 Mins</button>
+        <button class="m3-btn btn-outlined time-btn" data-mins="30">30 Mins</button>
+        <button class="m3-btn btn-outlined time-btn" data-mins="45">45 Mins</button>
+        <button class="m3-btn btn-outlined time-btn btn-selected" data-mins="60">60 Mins</button>
+      </div>
+
+      <!-- Time Interval Row 2 (Elevated) -->
+      <div class="button-row time-row">
+        <button class="m3-btn btn-elevated time-btn" data-mins="120">2 Hours</button>
+        <button class="m3-btn btn-elevated time-btn" data-mins="240">4 Hours</button>
+        <button class="m3-btn btn-elevated time-btn" data-mins="360">6 Hours</button>
+        <button class="m3-btn btn-elevated time-btn" data-mins="480">8 Hours</button>
+      </div>
+
+      <!-- Time Interval Row 3 (Elevated & Tonal) -->
+      <div class="button-row time-row">
+        <button class="m3-btn btn-elevated time-btn" data-mins="600">10 Hours</button>
+        <button class="m3-btn btn-elevated time-btn" data-mins="720">12 Hours</button>
+        <button class="m3-btn btn-tonal time-btn" data-mins="eod">End of Day</button>
+        <button class="m3-btn btn-tonal time-btn" data-mins="next_day">Next Day</button>
+      </div>
+
+      <!-- Time Interval Row 4 (Tonal & Filled) -->
+      <div class="button-row time-row">
+        <button class="m3-btn btn-tonal time-btn" data-mins="next_noon">Next Noon</button>
+        <button class="m3-btn btn-tonal time-btn" data-mins="next_night">Next Night</button>
+        <button class="m3-btn btn-filled time-btn" data-mins="2880">2 Days</button>
+        <button class="m3-btn btn-filled time-btn" data-mins="4320">3 Days</button>
+      </div>
+
+      <!-- Time Interval Row 5 (Filled) -->
+      <div class="button-row time-row">
+        <button class="m3-btn btn-filled time-btn" data-mins="7200">5 Days</button>
+        <button class="m3-btn btn-filled time-btn" data-mins="14400">10 Days</button>
+        <button class="m3-btn btn-filled time-btn" data-mins="20160">2 Weeks</button>
+        <button class="m3-btn btn-filled time-btn" data-mins="30240">3 Weeks</button>
+      </div>
+
+    </main>
+
+    <!-- Bottom Sheet Queue -->
+    <section class="bottom-sheet" id="bottomSheet">
+      <div class="drag-handle"></div>
+      <div class="sheet-header-title">
+        <span>Reminders in Queue...</span>
+        <span class="sheet-badge" id="queueCount">0</span>
+      </div>
+
+      <div class="queue-container" id="queueList">
+        <!-- Rendered dynamically via IndexedDB -->
+      </div>
+    </section>
+
   </div>
 
-  <footer class="mt-8 text-center text-xs text-gray-600">
-    <p>Local-First Offline Engine</p>
-  </footer>
-
   <script>
-    let selectedDuration = 60;
-    const STORAGE_KEY = 'panic_button_tasks';
+    // Selected Interval State
+    let selectedInterval = '60';
+    let notificationsActive = true;
 
-    function getTasks() {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    // Toast Engine
+    function showToast(text) {
+      const toast = document.getElementById('toast');
+      toast.innerText = text;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 1800);
     }
 
-    function saveTasks(tasks) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
-      renderTasks();
+    // IndexedDB Implementation
+    const DB_NAME = 'TheGreatReminderDB';
+    const STORE_NAME = 'reminders';
+    let db;
+
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = (e) => {
+      const database = e.target.result;
+      if (!database.objectStoreNames.contains(STORE_NAME)) {
+        database.createObjectStore(STORE_NAME, { keyPath: 'id' });
+      }
+    };
+    req.onsuccess = (e) => {
+      db = e.target.result;
+      loadQueue();
+    };
+    req.onerror = () => console.error("Database initialization failed.");
+
+    function getDB() {
+      return new Promise((resolve) => {
+        if (db) return resolve(db);
+        const r = indexedDB.open(DB_NAME, 1);
+        r.onsuccess = (e) => resolve(e.target.result);
+      });
     }
 
-    function calculateTargetTime(duration) {
+    async function saveReminder(action, title) {
+      const database = await getDB();
+      const tx = database.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+
+      const targetTimestamp = calculateTimestamp(selectedInterval);
+      const reminder = {
+        id: Date.now(),
+        action: action,
+        title: title || `${action} Task`,
+        due: targetTimestamp,
+        created: Date.now()
+      };
+
+      store.add(reminder);
+      tx.oncomplete = () => {
+        showToast(`${action} captured`);
+        loadQueue();
+      };
+    }
+
+    async function loadQueue() {
+      const database = await getDB();
+      const tx = database.transaction(STORE_NAME, 'readonly');
+      const store = tx.objectStore(STORE_NAME);
+      const reqAll = store.getAll();
+
+      reqAll.onsuccess = () => {
+        const items = reqAll.result.sort((a, b) => a.due - b.due);
+        document.getElementById('queueCount').innerText = items.length;
+        renderQueueCards(items);
+      };
+    }
+
+    async function deleteReminder(id) {
+      const database = await getDB();
+      const tx = database.transaction(STORE_NAME, 'readwrite');
+      tx.objectStore(STORE_NAME).delete(id);
+      tx.oncomplete = () => loadQueue();
+    }
+
+    function calculateTimestamp(val) {
       const now = new Date();
-      if (duration === 'eod') {
+      if (val === 'eod') {
         now.setHours(18, 0, 0, 0);
         return now.getTime();
       }
-      if (duration === 'tomorrow') {
+      if (val === 'next_day') {
         now.setDate(now.getDate() + 1);
         now.setHours(9, 0, 0, 0);
         return now.getTime();
       }
-      if (duration === 'custom') {
-        const promptMins = prompt("Enter reminder delay in minutes:", "15");
-        const parsed = parseInt(promptMins, 10);
-        return now.getTime() + (isNaN(parsed) ? 15 : parsed) * 60000;
+      if (val === 'next_noon') {
+        now.setDate(now.getDate() + 1);
+        now.setHours(12, 0, 0, 0);
+        return now.getTime();
       }
-      return now.getTime() + (parseInt(duration, 10) * 60000);
-    }
-
-    function addTask(type) {
-      const input = document.getElementById('taskInput');
-      const title = input.value.trim();
-      if (!title) {
-        input.focus();
-        return;
+      if (val === 'next_night') {
+        now.setDate(now.getDate() + 1);
+        now.setHours(21, 0, 0, 0);
+        return now.getTime();
       }
-
-      const tasks = getTasks();
-      const newTask = {
-        id: Date.now(),
-        type: type,
-        title: title,
-        targetTime: calculateTargetTime(selectedDuration),
-        status: 'pending'
-      };
-
-      tasks.unshift(newTask);
-      saveTasks(tasks);
-      input.value = '';
+      return now.getTime() + (parseInt(val, 10) * 60000);
     }
 
-    function updateTaskTime(id, extraMinutes) {
-      const tasks = getTasks();
-      const task = tasks.find(t => t.id === id);
-      if (task) {
-        task.targetTime = Date.now() + (extraMinutes * 60000);
-        saveTasks(tasks);
-      }
-    }
-
-    function deleteTask(id) {
-      let tasks = getTasks();
-      tasks = tasks.filter(t => t.id !== id);
-      saveTasks(tasks);
-    }
-
-    function formatTime(timestamp) {
-      const d = new Date(timestamp);
+    function formatTimeDisplay(ts) {
+      const d = new Date(ts);
       return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + ' · ' +
              d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true });
     }
 
-    function renderTasks() {
-      const tasks = getTasks().filter(t => t.status === 'pending');
-      const listContainer = document.getElementById('taskList');
-      const countBadge = document.getElementById('pendingCount');
-      countBadge.innerText = tasks.length;
-      listContainer.innerHTML = '';
+    function renderQueueCards(items) {
+      const container = document.getElementById('queueList');
+      container.innerHTML = '';
 
-      if (tasks.length === 0) {
-        listContainer.innerHTML = '<p class="text-xs text-gray-500 py-4 text-center">No pending capture items.</p>';
+      if (items.length === 0) {
+        container.innerHTML = '<p style="text-align:center;font-size:12px;color:var(--md-sys-color-outline);padding:24px 0;">No active reminders queued.</p>';
         return;
       }
 
-      tasks.forEach(task => {
-        const typeStyles = {
-          CALL: 'bg-emerald-950 text-emerald-400 border-emerald-800',
-          REMIND: 'bg-orange-950 text-orange-400 border-orange-800',
-          EMAIL: 'bg-sky-950 text-sky-400 border-sky-800'
-        }[task.type] || 'bg-gray-800 text-gray-400 border-gray-700';
-
+      items.forEach(item => {
         const card = document.createElement('div');
-        card.className = 'accent-card p-3 rounded-lg flex flex-col gap-2';
+        card.className = 'task-card';
         card.innerHTML = `
-          <div class="flex items-start justify-between">
-            <div>
-              <div class="flex items-center gap-2 mb-1">
-                <span class="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded border ${typeStyles}">${task.type}</span>
-                <span class="text-sm font-bold text-white">${task.title}</span>
-              </div>
-              <p class="text-xs text-red-400 font-semibold">${formatTime(task.targetTime)}</p>
-              <p class="text-[10px] text-gray-500 mt-0.5">Persistence: Active</p>
-            </div>
+          <div>
+            <div class="task-meta-title">[${item.action}] ${item.title}</div>
+            <div class="task-meta-sub">${formatTimeDisplay(item.due)}</div>
           </div>
-          <div class="grid grid-cols-4 gap-1.5 pt-2 border-t border-gray-800 text-xs">
-            <button onclick="deleteTask(${task.id})" class="bg-[#10b981] hover:bg-[#059669] text-white py-1 rounded font-medium">Done</button>
-            <button onclick="updateTaskTime(${task.id}, 60)" class="bg-[#0284c7] hover:bg-[#0369a1] text-white py-1 rounded font-medium">+1 hour</button>
-            <button onclick="updateTaskTime(${task.id}, 1440)" class="bg-[#0284c7] hover:bg-[#0369a1] text-white py-1 rounded font-medium">Tomorrow</button>
-            <button onclick="deleteTask(${task.id})" class="bg-gray-800 hover:bg-gray-700 text-red-400 border border-gray-700 py-1 rounded font-medium">Cancel</button>
+          <div class="card-actions">
+            <button class="card-act-btn done" onclick="deleteReminder(${item.id})">Done</button>
+            <button class="card-act-btn" onclick="deleteReminder(${item.id})">Cancel</button>
           </div>
         `;
-        listContainer.appendChild(card);
+        container.appendChild(card);
       });
     }
 
-    // Interval button handling
+    // Interval Button Selection Handler
     document.querySelectorAll('.time-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.time-btn').forEach(b => {
-          b.className = 'time-btn bg-gray-800 text-gray-300 py-1.5 rounded border border-gray-700 active:bg-gray-700';
-        });
-        btn.className = 'time-btn bg-gray-700 text-white font-semibold py-1.5 rounded border border-teal-500 active:bg-gray-700';
-        selectedDuration = btn.getAttribute('data-mins');
+        document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('btn-selected'));
+        btn.classList.add('btn-selected');
+        selectedInterval = btn.getAttribute('data-mins');
       });
     });
 
-    // Capture triggers
-    document.getElementById('btnCall').addEventListener('click', () => addTask('CALL'));
-    document.getElementById('btnRemind').addEventListener('click', () => addTask('REMIND'));
-    document.getElementById('btnEmail').addEventListener('click', () => addTask('EMAIL'));
-
-    // Speech-to-text
-    const micBtn = document.getElementById('micBtn');
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
-      recognition.continuous = false;
-      recognition.interimResults = false;
-
-      micBtn.addEventListener('click', () => {
-        recognition.start();
-        micBtn.classList.add('text-red-500');
+    // Action Triggers
+    document.querySelectorAll('[data-action]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const input = document.getElementById('taskInput');
+        const text = input.value.trim();
+        const action = btn.getAttribute('data-action');
+        saveReminder(action, text);
+        input.value = '';
       });
-
-      recognition.onresult = (event) => {
-        const text = event.results[0][0].transcript;
-        document.getElementById('taskInput').value = text;
-        micBtn.classList.remove('text-red-500');
-      };
-
-      recognition.onerror = () => micBtn.classList.remove('text-red-500');
-      recognition.onend = () => micBtn.classList.remove('text-red-500');
-    } else {
-      micBtn.style.display = 'none';
-    }
-
-    // Web Notification handlers
-    document.getElementById('notifyBtn').addEventListener('click', async () => {
-      if ('Notification' in window) {
-        const perm = await Notification.requestPermission();
-        alert('Notification permission: ' + perm);
-      }
     });
 
-    document.getElementById('testAlertBtn').addEventListener('click', () => {
-      if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification('Panic Button Alert', { body: 'Test notification triggered successfully.' });
-      } else {
-        alert('Test alert triggered (Permissions not granted).');
-      }
+    // Bell Notification Toggle
+    const bellBtn = document.getElementById('bellBtn');
+    const bellIcon = document.getElementById('bellIcon');
+    bellBtn.addEventListener('click', () => {
+      notificationsActive = !notificationsActive;
+      bellIcon.innerText = notificationsActive ? 'notifications' : 'notifications_off';
+      showToast(notificationsActive ? 'Notifications Active' : 'Notifications Silenced');
     });
 
-    // Boot
-    renderTasks();
+    // Expand / Collapse Bottom Sheet
+    const sheet = document.getElementById('bottomSheet');
+    sheet.addEventListener('click', (e) => {
+      if (!sheet.classList.contains('expanded')) {
+        sheet.classList.add('expanded');
+      } else if (e.target.classList.contains('drag-handle') || e.target.classList.contains('sheet-header-title')) {
+        sheet.classList.remove('expanded');
+      }
+    });
   </script>
 </body>
 </html>
