@@ -8,6 +8,8 @@ on:
 jobs:
   build-apk:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout Repository
@@ -24,6 +26,12 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Set up Icon Generator Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fonts-dejavu-core
+          python3 -m pip install pillow
+
       - name: Initialize Capacitor App
         run: |
           npm init -y
@@ -33,14 +41,17 @@ jobs:
           cat << 'EOF' > capacitor.config.json
           {
             "appId": "com.panicbutton.app",
-            "appName": "Panic Button",
+            "appName": "e-Walnut",
             "webDir": "www"
           }
           EOF
           npx cap add android
           echo "org.gradle.java.home=$JAVA_HOME" >> android/gradle.properties
 
-          # Force Gradle resolution strategy to resolve duplicate Kotlin stdlib classes
+          # Update Android native app label strings
+          sed -i 's/<string name="app_name">.*<\/string>/<string name="app_name">e-Walnut<\/string>/' android/app/src/main/res/values/strings.xml
+          sed -i 's/<string name="title_activity_main">.*<\/string>/<string name="title_activity_main">e-Walnut<\/string>/' android/app/src/main/res/values/strings.xml
+
           cat << 'EOF' >> android/build.gradle
 
           allprojects {
@@ -54,14 +65,66 @@ jobs:
           }
           EOF
 
+      - name: Generate e-Walnut App Icons
+        run: |
+          python3 -c '
+          import os
+          from PIL import Image, ImageDraw, ImageFont
+
+          # Base 512x512 canvas
+          img = Image.new("RGBA", (512, 512), (255, 255, 255, 255))
+          draw = ImageDraw.Draw(img)
+
+          # Terracotta / Walnut Brown matching specification
+          color_e = (179, 110, 68, 255)
+          color_text = (0, 0, 0, 255)
+
+          # Draw giant "E"
+          draw.rectangle([125, 30, 180, 482], fill=color_e)   # Spine
+          draw.rectangle([125, 30, 370, 80], fill=color_e)    # Top arm
+          draw.rectangle([125, 225, 355, 275], fill=color_e)  # Middle arm
+          draw.rectangle([125, 430, 380, 480], fill=color_e)  # Bottom arm
+
+          # Render "Wal" and "Nut" in cavities
+          font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+          font = ImageFont.truetype(font_path, 72)
+          draw.text((275, 152), "Wal", fill=color_text, font=font, anchor="mm")
+          draw.text((275, 352), "Nut", fill=color_text, font=font, anchor="mm")
+
+          # Create safe-zone foreground for Android Adaptive Icons
+          fg = Image.new("RGBA", (512, 512), (0, 0, 0, 0))
+          scaled = img.resize((360, 360), Image.Resampling.LANCZOS)
+          fg.paste(scaled, (76, 76), scaled)
+
+          densities = {
+              "mdpi": (48, 108),
+              "hdpi": (72, 162),
+              "xhdpi": (96, 216),
+              "xxhdpi": (144, 324),
+              "xxxhdpi": (192, 432)
+          }
+
+          for density, (icon_sz, fg_sz) in densities.items():
+              res_dir = f"android/app/src/main/res/mipmap-{density}"
+              os.makedirs(res_dir, exist_ok=True)
+              img.resize((icon_sz, icon_sz), Image.Resampling.LANCZOS).save(f"{res_dir}/ic_launcher.png")
+              img.resize((icon_sz, icon_sz), Image.Resampling.LANCZOS).save(f"{res_dir}/ic_launcher_round.png")
+              fg.resize((fg_sz, fg_sz), Image.Resampling.LANCZOS).save(f"{res_dir}/ic_launcher_foreground.png")
+          '
+
       - name: Compile Debug APK
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug -Dorg.gradle.java.home=$JAVA_HOME
 
-      - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4
+      - name: Publish Direct APK Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: panic-button-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          tag_name: latest
+          name: e-Walnut Latest Release
+          draft: false
+          prerelease: false
+          files: android/app/build/outputs/apk/debug/app-debug.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
