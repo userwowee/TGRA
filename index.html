@@ -34,6 +34,8 @@
       --md-sys-color-outline-variant: #D6C3B6;
       --md-sys-color-error: #B3261E;
       --md-sys-color-on-error: #FFFFFF;
+      --md-sys-color-error-container: #F9DEDC;
+      --md-sys-color-on-error-container: #410E0B;
 
       --shape-corner-btn: 10px;
       --shape-corner-inner: 8px;
@@ -57,7 +59,7 @@
       min-height: 100vh;
     }
 
-    /* Screen Frame (Natural vertical scrolling container) */
+    /* Screen Frame */
     .screen-container {
       width: 100%;
       max-width: 412px;
@@ -71,7 +73,7 @@
       -webkit-overflow-scrolling: touch;
     }
 
-    /* Top App Bar - Menu Removed, Title in One Clean Line */
+    /* Top App Bar */
     .top-app-bar {
       height: 64px;
       display: flex;
@@ -143,7 +145,7 @@
       font-weight: 700;
       position: relative;
       overflow: hidden;
-      transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.15s;
+      transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.15s, outline 0.15s;
     }
     .m3-btn .material-symbols-rounded {
       font-size: 18px;
@@ -152,7 +154,7 @@
       transform: scale(0.96);
     }
 
-    /* Inner Adjoining Corners (Connected Button Group) */
+    /* Inner Adjoining Corners */
     .button-row .m3-btn:first-child {
       border-radius: var(--shape-corner-btn) var(--shape-corner-inner) var(--shape-corner-inner) var(--shape-corner-btn);
     }
@@ -183,10 +185,12 @@
       color: var(--md-sys-color-secondary);
     }
 
-    /* Active Time Selector State */
-    .btn-selected {
-      border: 2px solid var(--md-sys-color-primary) !important;
-      font-weight: 900 !important;
+    /* Pipeline Step 1 Selected Highlight */
+    .action-selected {
+      outline: 3px solid #211A14 !important;
+      outline-offset: -2px;
+      box-shadow: 0 0 12px rgba(33, 26, 20, 0.45) !important;
+      transform: scale(0.97);
     }
 
     /* Filled Text Field */
@@ -219,13 +223,14 @@
       font-family: 'Roboto', sans-serif;
       font-size: 14px;
       color: var(--md-sys-color-on-surface);
+      user-select: text;
     }
     .input-box input::placeholder {
       color: var(--md-sys-color-on-surface-variant);
       font-size: 13px;
     }
 
-    /* Interval Button Size Tweaks */
+    /* Interval Trigger Buttons */
     .time-row .m3-btn {
       height: 42px;
       font-size: 11.5px;
@@ -259,7 +264,7 @@
       border-radius: 12px;
     }
 
-    /* Queue Cards Matching Amber Scheme */
+    /* Queue Cards */
     .queue-container {
       display: flex;
       flex-direction: column;
@@ -321,7 +326,6 @@
       color: var(--md-sys-color-on-secondary-container);
     }
 
-    /* Empty State */
     .queue-empty {
       text-align: center;
       font-size: 13px;
@@ -332,26 +336,45 @@
       padding: 24px 12px;
     }
 
-    /* Toast Notification */
+    /* Material 3 Expressive Matching Alert Tokens */
     .toast {
       position: fixed;
-      top: 20px;
+      top: 18px;
       left: 50%;
-      transform: translateX(-50%) translateY(-20px);
-      background-color: var(--md-sys-color-on-surface);
-      color: var(--md-sys-color-surface);
-      padding: 8px 18px;
-      border-radius: 20px;
-      font-size: 12.5px;
-      font-weight: 500;
+      transform: translateX(-50%) translateY(-24px);
+      padding: 10px 18px;
+      border-radius: 24px;
+      font-size: 13px;
+      font-weight: 700;
       opacity: 0;
       pointer-events: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
       transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
       z-index: 100;
+    }
+    .toast .material-symbols-rounded {
+      font-size: 18px;
     }
     .toast.show {
       opacity: 1;
       transform: translateX(-50%) translateY(0);
+    }
+
+    /* Success / Capture Toast (Amber Primary Container) */
+    .toast.toast-success {
+      background-color: var(--md-sys-color-primary-container);
+      color: var(--md-sys-color-on-primary-container);
+      border: 1px solid var(--md-sys-color-outline-variant);
+    }
+
+    /* Warning / Blocked Pipeline Toast (M3 Error Container) */
+    .toast.toast-warning {
+      background-color: var(--md-sys-color-error-container);
+      color: var(--md-sys-color-on-error-container);
+      border: 1px solid #F2B8B5;
     }
   </style>
 </head>
@@ -359,8 +382,11 @@
 
   <div class="screen-container">
     
-    <!-- Toast Popup -->
-    <div id="toast" class="toast">Reminder Captured</div>
+    <!-- Dynamic Color-Matched Alert -->
+    <div id="toast" class="toast toast-success">
+      <span class="material-symbols-rounded" id="toastIcon">check_circle</span>
+      <span id="toastMsg">Reminder Captured</span>
+    </div>
 
     <!-- Top App Bar -->
     <header class="top-app-bar">
@@ -370,52 +396,48 @@
       </button>
     </header>
 
-    <!-- Main Scrollable Canvas -->
+    <!-- Main Content Canvas -->
     <main class="content-canvas">
 
-      <!-- Action Group Row 1 -->
+      <!-- STEP 1: Action Selector Rows -->
       <div class="button-row">
-        <button class="m3-btn btn-elevated" data-action="Think"><span class="material-symbols-rounded">lightbulb</span>Think</button>
-        <button class="m3-btn btn-tonal" data-action="Relax"><span class="material-symbols-rounded">local_bar</span>Relax</button>
-        <button class="m3-btn btn-filled" data-action="Pray"><span class="material-symbols-rounded">self_improvement</span>Pray</button>
+        <button class="m3-btn btn-elevated action-btn" data-action="Think"><span class="material-symbols-rounded">lightbulb</span>Think</button>
+        <button class="m3-btn btn-tonal action-btn" data-action="Relax"><span class="material-symbols-rounded">local_bar</span>Relax</button>
+        <button class="m3-btn btn-filled action-btn" data-action="Pray"><span class="material-symbols-rounded">self_improvement</span>Pray</button>
       </div>
 
-      <!-- Action Group Row 2 -->
       <div class="button-row">
-        <button class="m3-btn btn-elevated" data-action="Call"><span class="material-symbols-rounded">call</span>Call</button>
-        <button class="m3-btn btn-tonal" data-action="Email"><span class="material-symbols-rounded">send</span>Email</button>
-        <button class="m3-btn btn-filled" data-action="Whatsapp"><span class="material-symbols-rounded">phone_in_talk</span>Whatsapp</button>
+        <button class="m3-btn btn-elevated action-btn" data-action="Call"><span class="material-symbols-rounded">call</span>Call</button>
+        <button class="m3-btn btn-tonal action-btn" data-action="Email"><span class="material-symbols-rounded">send</span>Email</button>
+        <button class="m3-btn btn-filled action-btn" data-action="Whatsapp"><span class="material-symbols-rounded">phone_in_talk</span>Whatsapp</button>
       </div>
 
-      <!-- Action Group Row 3 -->
       <div class="button-row">
-        <button class="m3-btn btn-elevated" data-action="Go"><span class="material-symbols-rounded">directions_walk</span>Go</button>
-        <button class="m3-btn btn-tonal" data-action="Buy"><span class="material-symbols-rounded">shopping_cart</span>Buy</button>
-        <button class="m3-btn btn-filled" data-action="Fetch / Send"><span class="material-symbols-rounded">local_shipping</span>Fetch / Send</button>
+        <button class="m3-btn btn-elevated action-btn" data-action="Go"><span class="material-symbols-rounded">directions_walk</span>Go</button>
+        <button class="m3-btn btn-tonal action-btn" data-action="Buy"><span class="material-symbols-rounded">shopping_cart</span>Buy</button>
+        <button class="m3-btn btn-filled action-btn" data-action="Fetch / Send"><span class="material-symbols-rounded">local_shipping</span>Fetch / Send</button>
       </div>
 
-      <!-- Action Group Row 4 -->
       <div class="button-row">
-        <button class="m3-btn btn-elevated" data-action="Exercise"><span class="material-symbols-rounded">pool</span>Exercise</button>
-        <button class="m3-btn btn-tonal" data-action="Groom"><span class="material-symbols-rounded">brush</span>Groom</button>
-        <button class="m3-btn btn-filled" data-action="Supplement"><span class="material-symbols-rounded">pill</span>Supplement</button>
+        <button class="m3-btn btn-elevated action-btn" data-action="Exercise"><span class="material-symbols-rounded">pool</span>Exercise</button>
+        <button class="m3-btn btn-tonal action-btn" data-action="Groom"><span class="material-symbols-rounded">brush</span>Groom</button>
+        <button class="m3-btn btn-filled action-btn" data-action="Supplement"><span class="material-symbols-rounded">pill</span>Supplement</button>
       </div>
 
-      <!-- Input Field -->
+      <!-- STEP 2: Task Input Field -->
       <div class="input-box">
         <span class="material-symbols-rounded">edit</span>
-        <input type="text" id="taskInput" placeholder="Person, task or item." autocomplete="off" />
+        <input type="text" id="taskInput" placeholder="Person, task or item (optional)" autocomplete="off" />
       </div>
 
-      <!-- Time Interval Row 1 (Outlined) -->
+      <!-- STEP 3: Time Interval Trigger Rows -->
       <div class="button-row time-row">
         <button class="m3-btn btn-outlined time-btn" data-mins="15">15 Mins</button>
         <button class="m3-btn btn-outlined time-btn" data-mins="30">30 Mins</button>
         <button class="m3-btn btn-outlined time-btn" data-mins="45">45 Mins</button>
-        <button class="m3-btn btn-outlined time-btn btn-selected" data-mins="60">60 Mins</button>
+        <button class="m3-btn btn-outlined time-btn" data-mins="60">60 Mins</button>
       </div>
 
-      <!-- Time Interval Row 2 (Elevated) -->
       <div class="button-row time-row">
         <button class="m3-btn btn-elevated time-btn" data-mins="120">2 Hours</button>
         <button class="m3-btn btn-elevated time-btn" data-mins="240">4 Hours</button>
@@ -423,7 +445,6 @@
         <button class="m3-btn btn-elevated time-btn" data-mins="480">8 Hours</button>
       </div>
 
-      <!-- Time Interval Row 3 (Elevated & Tonal) -->
       <div class="button-row time-row">
         <button class="m3-btn btn-elevated time-btn" data-mins="600">10 Hours</button>
         <button class="m3-btn btn-elevated time-btn" data-mins="720">12 Hours</button>
@@ -431,7 +452,6 @@
         <button class="m3-btn btn-tonal time-btn" data-mins="next_day">Next Day</button>
       </div>
 
-      <!-- Time Interval Row 4 (Tonal & Filled) -->
       <div class="button-row time-row">
         <button class="m3-btn btn-tonal time-btn" data-mins="next_noon">Next Noon</button>
         <button class="m3-btn btn-tonal time-btn" data-mins="next_night">Next Night</button>
@@ -439,7 +459,6 @@
         <button class="m3-btn btn-filled time-btn" data-mins="4320">3 Days</button>
       </div>
 
-      <!-- Time Interval Row 5 (Filled) -->
       <div class="button-row time-row">
         <button class="m3-btn btn-filled time-btn" data-mins="7200">5 Days</button>
         <button class="m3-btn btn-filled time-btn" data-mins="14400">10 Days</button>
@@ -447,7 +466,7 @@
         <button class="m3-btn btn-filled time-btn" data-mins="30240">3 Weeks</button>
       </div>
 
-      <!-- Reminders in Queue (Standard Scrollable Section) -->
+      <!-- Reminders in Queue -->
       <section class="queue-section">
         <div class="queue-header">
           <div class="queue-title">Reminders in Queue</div>
@@ -461,14 +480,30 @@
   </div>
 
   <script>
-    let selectedInterval = '60';
+    let selectedAction = null;
     let notificationsActive = true;
+    let toastTimeout = null;
 
-    function showToast(text) {
+    // Dual-Mode Token-Matched Alert Trigger
+    function showAlert(text, type = 'success') {
       const toast = document.getElementById('toast');
-      toast.innerText = text;
-      toast.classList.add('show');
-      setTimeout(() => toast.classList.remove('show'), 1800);
+      const toastMsg = document.getElementById('toastMsg');
+      const toastIcon = document.getElementById('toastIcon');
+
+      clearTimeout(toastTimeout);
+
+      if (type === 'warning') {
+        toast.className = 'toast toast-warning show';
+        toastIcon.innerText = 'warning';
+      } else {
+        toast.className = 'toast toast-success show';
+        toastIcon.innerText = 'check_circle';
+      }
+
+      toastMsg.innerText = text;
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2000);
     }
 
     // IndexedDB Setup
@@ -497,12 +532,43 @@
       });
     }
 
-    async function saveReminder(action, title) {
+    // Step 1: Action Selection
+    document.querySelectorAll('.action-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('action-selected'));
+        btn.classList.add('action-selected');
+        selectedAction = btn.getAttribute('data-action');
+        document.getElementById('taskInput').focus();
+      });
+    });
+
+    // Step 3: Trigger Execution
+    document.querySelectorAll('.time-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (!selectedAction) {
+          showAlert('Select an activity first', 'warning');
+          return;
+        }
+
+        const input = document.getElementById('taskInput');
+        const text = input.value.trim();
+        const intervalVal = btn.getAttribute('data-mins');
+        const intervalText = btn.innerText.trim();
+
+        saveReminder(selectedAction, text, intervalVal, intervalText);
+
+        selectedAction = null;
+        document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('action-selected'));
+        input.value = '';
+      });
+    });
+
+    async function saveReminder(action, title, intervalVal, intervalText) {
       const database = await getDB();
       const tx = database.transaction(STORE_NAME, 'readwrite');
       const store = tx.objectStore(STORE_NAME);
 
-      const targetTimestamp = calculateTimestamp(selectedInterval);
+      const targetTimestamp = calculateTimestamp(intervalVal);
       const reminder = {
         id: Date.now(),
         action: action,
@@ -513,7 +579,7 @@
 
       store.add(reminder);
       tx.oncomplete = () => {
-        showToast(`${action} captured`);
+        showAlert(`[${action}] set for ${intervalText}`, 'success');
         loadQueue();
       };
     }
@@ -594,33 +660,13 @@
       });
     }
 
-    // Interval Button Selection Handler
-    document.querySelectorAll('.time-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('btn-selected'));
-        btn.classList.add('btn-selected');
-        selectedInterval = btn.getAttribute('data-mins');
-      });
-    });
-
-    // Action Button Triggers
-    document.querySelectorAll('[data-action]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const input = document.getElementById('taskInput');
-        const text = input.value.trim();
-        const action = btn.getAttribute('data-action');
-        saveReminder(action, text);
-        input.value = '';
-      });
-    });
-
     // Bell Notification Toggle
     const bellBtn = document.getElementById('bellBtn');
     const bellIcon = document.getElementById('bellIcon');
     bellBtn.addEventListener('click', () => {
       notificationsActive = !notificationsActive;
       bellIcon.innerText = notificationsActive ? 'notifications' : 'notifications_off';
-      showToast(notificationsActive ? 'Notifications Active' : 'Notifications Silenced');
+      showAlert(notificationsActive ? 'Notifications Active' : 'Notifications Silenced', 'success');
     });
   </script>
 </body>
