@@ -35,18 +35,31 @@ jobs:
       - name: Initialize Capacitor App
         run: |
           npm init -y
-          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/local-notifications
           mkdir -p www
           cp index.html www/
           cat << 'EOF' > capacitor.config.json
           {
             "appId": "com.panicbutton.app",
             "appName": "e-Walnut",
-            "webDir": "www"
+            "webDir": "www",
+            "plugins": {
+              "LocalNotifications": {
+                "smallIcon": "ic_launcher_round",
+                "iconColor": "#8B5000",
+                "sound": "beep.wav"
+              }
+            }
           }
           EOF
           npx cap add android
           echo "org.gradle.java.home=$JAVA_HOME" >> android/gradle.properties
+
+          # Inject background and alarm permissions for Android 13+
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />' android/app/src/main/AndroidManifest.xml
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />' android/app/src/main/AndroidManifest.xml
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />' android/app/src/main/AndroidManifest.xml
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.VIBRATE" />' android/app/src/main/AndroidManifest.xml
 
           # Update Android native app label strings
           sed -i 's/<string name="app_name">.*<\/string>/<string name="app_name">e-Walnut<\/string>/' android/app/src/main/res/values/strings.xml
@@ -71,27 +84,22 @@ jobs:
           import os
           from PIL import Image, ImageDraw, ImageFont
 
-          # Base 512x512 canvas
           img = Image.new("RGBA", (512, 512), (255, 255, 255, 255))
           draw = ImageDraw.Draw(img)
 
-          # Terracotta / Walnut Brown matching specification
           color_e = (179, 110, 68, 255)
           color_text = (0, 0, 0, 255)
 
-          # Draw giant "E"
-          draw.rectangle([125, 30, 180, 482], fill=color_e)   # Spine
-          draw.rectangle([125, 30, 370, 80], fill=color_e)    # Top arm
-          draw.rectangle([125, 225, 355, 275], fill=color_e)  # Middle arm
-          draw.rectangle([125, 430, 380, 480], fill=color_e)  # Bottom arm
+          draw.rectangle([125, 30, 180, 482], fill=color_e)
+          draw.rectangle([125, 30, 370, 80], fill=color_e)
+          draw.rectangle([125, 225, 355, 275], fill=color_e)
+          draw.rectangle([125, 430, 380, 480], fill=color_e)
 
-          # Render "Wal" and "Nut" in cavities
           font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
           font = ImageFont.truetype(font_path, 72)
           draw.text((275, 152), "Wal", fill=color_text, font=font, anchor="mm")
           draw.text((275, 352), "Nut", fill=color_text, font=font, anchor="mm")
 
-          # Create safe-zone foreground for Android Adaptive Icons
           fg = Image.new("RGBA", (512, 512), (0, 0, 0, 0))
           scaled = img.resize((360, 360), Image.Resampling.LANCZOS)
           fg.paste(scaled, (76, 76), scaled)
