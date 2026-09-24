@@ -150,6 +150,10 @@
     .m3-btn .material-symbols-rounded {
       font-size: 18px;
     }
+    .m3-btn .emoji-icon {
+      font-size: 17px;
+      line-height: 1;
+    }
     .m3-btn:active {
       transform: scale(0.96);
     }
@@ -250,11 +254,39 @@
       justify-content: space-between;
       padding: 0 2px;
     }
+    .queue-title-area {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
     .queue-title {
-      font-size: 18px;
+      font-size: 17px;
       font-weight: 700;
       color: var(--md-sys-color-on-surface);
     }
+
+    /* Procrastinator Toggle Button */
+    .procrastinator-toggle {
+      border: 1px solid var(--md-sys-color-outline-variant);
+      background-color: var(--md-sys-color-surface-container);
+      color: var(--md-sys-color-on-surface-variant);
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+    .procrastinator-toggle.active {
+      background-color: var(--md-sys-color-secondary-container);
+      color: var(--md-sys-color-on-secondary-container);
+      border-color: var(--md-sys-color-primary);
+      box-shadow: 0 1px 4px rgba(139, 80, 0, 0.2);
+    }
+
     .queue-badge {
       font-size: 12px;
       font-weight: 700;
@@ -276,27 +308,22 @@
       border-radius: 8px;
       padding: 12px;
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
+      flex-direction: column;
+      gap: 8px;
       box-shadow: 0 1px 2px rgba(0,0,0,0.04);
     }
-    .task-details {
-      flex: 1;
+    .task-row-top {
       display: flex;
-      flex-direction: column;
-      gap: 3px;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
     }
     .task-meta-title {
       font-size: 13.5px;
       font-weight: 700;
       color: var(--md-sys-color-on-surface);
       word-break: break-word;
-    }
-    .task-meta-sub {
-      font-size: 11.5px;
-      color: var(--md-sys-color-primary);
-      font-weight: 600;
+      flex: 1;
     }
     .card-actions {
       display: flex;
@@ -306,13 +333,13 @@
     .card-act-btn {
       border: none;
       outline: none;
-      padding: 8px 12px;
+      padding: 6px 12px;
       border-radius: 6px;
       font-size: 11.5px;
       font-weight: 700;
       cursor: pointer;
       font-family: 'Roboto', sans-serif;
-      transition: transform 0.1s, opacity 0.1s;
+      transition: transform 0.1s;
     }
     .card-act-btn:active {
       transform: scale(0.95);
@@ -326,6 +353,45 @@
       color: var(--md-sys-color-on-secondary-container);
     }
 
+    /* Bottom row of card: Expiry Time & + 1 Hr Button */
+    .task-row-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--md-sys-color-surface-container-highest);
+      padding-top: 6px;
+      margin-top: 2px;
+    }
+    .task-meta-sub {
+      font-size: 12px;
+      color: var(--md-sys-color-primary);
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+    .task-meta-sub.overdue {
+      color: var(--md-sys-color-error);
+    }
+
+    .btn-extend-hour {
+      border: 1px solid var(--md-sys-color-outline-variant);
+      background-color: var(--md-sys-color-surface);
+      color: var(--md-sys-color-on-surface);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn-extend-hour:active {
+      transform: scale(0.94);
+      background-color: var(--md-sys-color-secondary-container);
+    }
+    .hidden {
+      display: none !important;
+    }
+
     .queue-empty {
       text-align: center;
       font-size: 13px;
@@ -336,7 +402,7 @@
       padding: 24px 12px;
     }
 
-    /* Material 3 Expressive Matching Alert Tokens */
+    /* M3 Expressive Alert Tokens */
     .toast {
       position: fixed;
       top: 18px;
@@ -362,15 +428,11 @@
       opacity: 1;
       transform: translateX(-50%) translateY(0);
     }
-
-    /* Success / Capture Toast (Amber Primary Container) */
     .toast.toast-success {
       background-color: var(--md-sys-color-primary-container);
       color: var(--md-sys-color-on-primary-container);
       border: 1px solid var(--md-sys-color-outline-variant);
     }
-
-    /* Warning / Blocked Pipeline Toast (M3 Error Container) */
     .toast.toast-warning {
       background-color: var(--md-sys-color-error-container);
       color: var(--md-sys-color-on-error-container);
@@ -382,7 +444,7 @@
 
   <div class="screen-container">
     
-    <!-- Dynamic Color-Matched Alert -->
+    <!-- Color-Matched Alerts -->
     <div id="toast" class="toast toast-success">
       <span class="material-symbols-rounded" id="toastIcon">check_circle</span>
       <span id="toastMsg">Reminder Captured</span>
@@ -420,8 +482,8 @@
 
       <div class="button-row">
         <button class="m3-btn btn-elevated action-btn" data-action="Exercise"><span class="material-symbols-rounded">pool</span>Exercise</button>
-        <button class="m3-btn btn-tonal action-btn" data-action="Groom"><span class="material-symbols-rounded">brush</span>Groom</button>
-        <button class="m3-btn btn-filled action-btn" data-action="Supplement"><span class="material-symbols-rounded">pill</span>Supplement</button>
+        <button class="m3-btn btn-tonal action-btn" data-action="Groom"><span class="emoji-icon">🪮</span>Groom</button>
+        <button class="m3-btn btn-filled action-btn" data-action="Health"><span class="material-symbols-rounded">pill</span>Health</button>
       </div>
 
       <!-- STEP 2: Task Input Field -->
@@ -466,10 +528,16 @@
         <button class="m3-btn btn-filled time-btn" data-mins="30240">3 Weeks</button>
       </div>
 
-      <!-- Reminders in Queue -->
+      <!-- Reminders in Queue Header with Procrastinator Toggle -->
       <section class="queue-section">
         <div class="queue-header">
-          <div class="queue-title">Reminders in Queue</div>
+          <div class="queue-title-area">
+            <div class="queue-title">Reminders in Queue</div>
+            <button class="procrastinator-toggle" id="procrastinatorBtn">
+              <span class="material-symbols-rounded" style="font-size:14px;">snooze</span>
+              <span>Procrastinor</span>
+            </button>
+          </div>
           <span class="queue-badge" id="queueCount">0</span>
         </div>
         <div class="queue-container" id="queueList"></div>
@@ -481,10 +549,50 @@
 
   <script>
     let selectedAction = null;
-    let notificationsActive = true;
+    let notificationsSoundActive = true; // When true: Sound + Vibrate. When false: Vibrate only.
+    let procrastinatorEnabled = false;
     let toastTimeout = null;
 
-    // Dual-Mode Token-Matched Alert Trigger
+    // Web Audio Synthesizer: Two-Tone Bell Chime
+    function playAudioAlert() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const now = audioCtx.currentTime;
+
+        const osc1 = audioCtx.createOscillator();
+        const gain1 = audioCtx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(880, now);
+        gain1.gain.setValueAtTime(0.3, now);
+        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+        osc1.connect(gain1);
+        gain1.connect(audioCtx.destination);
+        osc1.start(now);
+        osc1.stop(now + 0.5);
+
+        const osc2 = audioCtx.createOscillator();
+        const gain2 = audioCtx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(1760, now + 0.15);
+        gain2.gain.setValueAtTime(0.3, now + 0.15);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+        osc2.connect(gain2);
+        gain2.connect(audioCtx.destination);
+        osc2.start(now + 0.15);
+        osc2.stop(now + 0.8);
+      } catch (err) {
+        console.warn('AudioContext not allowed or ready yet', err);
+      }
+    }
+
+    // Physical Hardware Haptic Vibration
+    function triggerHaptic() {
+      if (navigator.vibrate) {
+        navigator.vibrate([300, 150, 300]);
+      }
+    }
+
+    // Dynamic Color-Matched Alert Trigger
     function showAlert(text, type = 'success') {
       const toast = document.getElementById('toast');
       const toastMsg = document.getElementById('toastMsg');
@@ -574,6 +682,7 @@
         action: action,
         title: title || `${action} Task`,
         due: targetTimestamp,
+        alerted: false,
         created: Date.now()
       };
 
@@ -604,6 +713,27 @@
       tx.oncomplete = () => loadQueue();
     }
 
+    async function extendOneHour(id) {
+      const database = await getDB();
+      const tx = database.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      const reqItem = store.get(id);
+
+      reqItem.onsuccess = () => {
+        const item = reqItem.result;
+        if (item) {
+          item.due += 3600000;
+          item.alerted = false;
+          store.put(item);
+        }
+      };
+
+      tx.oncomplete = () => {
+        showAlert('Extended +1 Hour', 'success');
+        loadQueue();
+      };
+    }
+
     function calculateTimestamp(val) {
       const now = new Date();
       if (val === 'eod') {
@@ -630,8 +760,9 @@
 
     function formatTimeDisplay(ts) {
       const d = new Date(ts);
-      return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) + ' · ' +
-             d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true });
+      const day = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+      const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase();
+      return `${day} · ${time}`;
     }
 
     function renderQueueCards(items) {
@@ -643,31 +774,88 @@
         return;
       }
 
+      const now = Date.now();
+
       items.forEach(item => {
+        const isOverdue = item.due <= now;
         const card = document.createElement('div');
         card.className = 'task-card';
+
+        const extendBtnHtml = `
+          <button class="btn-extend-hour ${procrastinatorEnabled ? '' : 'hidden'}" onclick="extendOneHour(${item.id})">
+            + 1 Hr
+          </button>
+        `;
+
         card.innerHTML = `
-          <div class="task-details">
+          <div class="task-row-top">
             <div class="task-meta-title">[${item.action}] ${item.title}</div>
-            <div class="task-meta-sub">${formatTimeDisplay(item.due)}</div>
+            <div class="card-actions">
+              <button class="card-act-btn done" onclick="deleteReminder(${item.id})">Done</button>
+              <button class="card-act-btn cancel" onclick="deleteReminder(${item.id})">Cancel</button>
+            </div>
           </div>
-          <div class="card-actions">
-            <button class="card-act-btn done" onclick="deleteReminder(${item.id})">Done</button>
-            <button class="card-act-btn cancel" onclick="deleteReminder(${item.id})">Cancel</button>
+          <div class="task-row-bottom">
+            <span class="task-meta-sub ${isOverdue ? 'overdue' : ''}">
+              ${isOverdue ? '⚠️ ' : ''}${formatTimeDisplay(item.due)}
+            </span>
+            ${extendBtnHtml}
           </div>
         `;
         container.appendChild(card);
       });
     }
 
-    // Bell Notification Toggle
+    // Procrastinator Toggle Switch
+    const procrastinatorBtn = document.getElementById('procrastinatorBtn');
+    procrastinatorBtn.addEventListener('click', () => {
+      procrastinatorEnabled = !procrastinatorEnabled;
+      procrastinatorBtn.classList.toggle('active', procrastinatorEnabled);
+      showAlert(procrastinatorEnabled ? 'Procrastinator Mode Active' : 'Procrastinator Disabled', 'success');
+      loadQueue();
+    });
+
+    // Bell Toggle: Sound Active -> Vibrate Only
     const bellBtn = document.getElementById('bellBtn');
     const bellIcon = document.getElementById('bellIcon');
     bellBtn.addEventListener('click', () => {
-      notificationsActive = !notificationsActive;
-      bellIcon.innerText = notificationsActive ? 'notifications' : 'notifications_off';
-      showAlert(notificationsActive ? 'Notifications Active' : 'Notifications Silenced', 'success');
+      notificationsSoundActive = !notificationsSoundActive;
+      bellIcon.innerText = notificationsSoundActive ? 'notifications' : 'notifications_off';
+      showAlert(notificationsSoundActive ? 'Sound & Vibrate Active' : 'Vibrate Only Mode', 'success');
     });
+
+    // Background Checking Loop (Runs every 4 seconds)
+    setInterval(async () => {
+      const database = await getDB();
+      const tx = database.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      const reqAll = store.getAll();
+
+      reqAll.onsuccess = () => {
+        const now = Date.now();
+        let queueNeedsRefresh = false;
+
+        reqAll.result.forEach(item => {
+          if (item.due <= now && !item.alerted) {
+            item.alerted = true;
+            store.put(item);
+
+            // Execute alert based on toggle state
+            if (notificationsSoundActive) {
+              playAudioAlert();
+            }
+            triggerHaptic();
+
+            showAlert(`DUE: [${item.action}] ${item.title}`, 'warning');
+            queueNeedsRefresh = true;
+          }
+        });
+
+        if (queueNeedsRefresh) {
+          loadQueue();
+        }
+      };
+    }, 4000);
   </script>
 </body>
 </html>
