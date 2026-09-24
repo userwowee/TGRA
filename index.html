@@ -121,7 +121,7 @@
       flex: 1;
     }
 
-    /* Connected Button Group Standard Rows */
+    /* Connected Button Group Rows */
     .button-row {
       display: flex;
       flex-direction: row;
@@ -169,7 +169,7 @@
       border-radius: var(--shape-corner-inner) var(--shape-corner-btn) var(--shape-corner-btn) var(--shape-corner-inner);
     }
 
-    /* Button Theme Roles */
+    /* Button Roles */
     .btn-elevated {
       background-color: var(--md-sys-color-surface);
       color: var(--md-sys-color-primary);
@@ -189,7 +189,7 @@
       color: var(--md-sys-color-secondary);
     }
 
-    /* Pipeline Step 1 Selected Highlight */
+    /* Selection Highlight */
     .action-selected {
       outline: 3px solid #211A14 !important;
       outline-offset: -2px;
@@ -241,7 +241,7 @@
       font-weight: 600;
     }
 
-    /* Inline Scrolling Queue Section */
+    /* Reminders Queue Section */
     .queue-section {
       margin-top: 14px;
       display: flex;
@@ -353,7 +353,7 @@
       color: var(--md-sys-color-on-secondary-container);
     }
 
-    /* Bottom row of card: Expiry Time & + 1 Hr Button */
+    /* Expiry and +1 Hr row */
     .task-row-bottom {
       display: flex;
       align-items: center;
@@ -528,7 +528,7 @@
         <button class="m3-btn btn-filled time-btn" data-mins="30240">3 Weeks</button>
       </div>
 
-      <!-- Reminders in Queue Header with Procrastinator Toggle -->
+      <!-- Reminders in Queue Header -->
       <section class="queue-section">
         <div class="queue-header">
           <div class="queue-title-area">
@@ -549,11 +549,76 @@
 
   <script>
     let selectedAction = null;
-    let notificationsSoundActive = true; // When true: Sound + Vibrate. When false: Vibrate only.
+    let notificationsSoundActive = true;
     let procrastinatorEnabled = false;
     let toastTimeout = null;
 
-    // Web Audio Synthesizer: Two-Tone Bell Chime
+    // Capacitor Native Bridge Detection
+    const NativeNotifications = window.Capacitor?.Plugins?.LocalNotifications;
+
+    // Initialize Native Android Notifications Channel & Permissions
+    async function initNativeNotificationEngine() {
+      if (!NativeNotifications) return;
+      try {
+        const status = await NativeNotifications.checkPermissions();
+        if (status.display !== 'granted') {
+          await NativeNotifications.requestPermissions();
+        }
+
+        // Create high-priority system channel with sound & vibration
+        await NativeNotifications.createChannel({
+          id: 'ewalnut_alerts',
+          name: 'e-Walnut Reminders',
+          description: 'High-priority task alerts',
+          importance: 5,
+          visibility: 1,
+          vibration: true
+        });
+      } catch (e) {
+        console.warn('Native notifications init error:', e);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initNativeNotificationEngine();
+    });
+
+    // Schedule Native Android Notification (Background / Lock Screen)
+    async function scheduleNativeAlarm(id, action, title, triggerTimestamp) {
+      if (!NativeNotifications) return;
+      try {
+        const intId = Math.abs(id % 2147483647);
+        await NativeNotifications.schedule({
+          notifications: [
+            {
+              id: intId,
+              title: `[${action}] Reminder`,
+              body: title || `${action} Task`,
+              schedule: { at: new Date(triggerTimestamp), allowWhileIdle: true },
+              channelId: 'ewalnut_alerts',
+              sound: notificationsSoundActive ? undefined : null
+            }
+          ]
+        });
+      } catch (err) {
+        console.warn('Failed scheduling native notification:', err);
+      }
+    }
+
+    // Cancel Scheduled Native Android Notification
+    async function cancelNativeAlarm(id) {
+      if (!NativeNotifications) return;
+      try {
+        const intId = Math.abs(id % 2147483647);
+        await NativeNotifications.cancel({
+          notifications: [{ id: intId }]
+        });
+      } catch (err) {
+        console.warn('Failed canceling native notification:', err);
+      }
+    }
+
+    // Web Audio Synthesizer (Foreground only)
     function playAudioAlert() {
       try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -647,6 +712,7 @@
         btn.classList.add('action-selected');
         selectedAction = btn.getAttribute('data-action');
         document.getElementById('taskInput').focus();
+        initNativeNotificationEngine();
       });
     });
 
@@ -677,16 +743,23 @@
       const store = tx.objectStore(STORE_NAME);
 
       const targetTimestamp = calculateTimestamp(intervalVal);
+      const reminderId = Date.now();
+      const reminderTitle = title || `${action} Task`;
+
       const reminder = {
-        id: Date.now(),
+        id: reminderId,
         action: action,
-        title: title || `${action} Task`,
+        title: reminderTitle,
         due: targetTimestamp,
         alerted: false,
         created: Date.now()
       };
 
       store.add(reminder);
+
+      // Register with Android OS scheduler
+      await scheduleNativeAlarm(reminderId, action, reminderTitle, targetTimestamp);
+
       tx.oncomplete = () => {
         showAlert(`[${action}] set for ${intervalText}`, 'success');
         loadQueue();
@@ -710,6 +783,10 @@
       const database = await getDB();
       const tx = database.transaction(STORE_NAME, 'readwrite');
       tx.objectStore(STORE_NAME).delete(id);
+
+      // Cancel registered Android OS alarm
+      await cancelNativeAlarm(id);
+
       tx.oncomplete = () => loadQueue();
     }
 
@@ -719,12 +796,16 @@
       const store = tx.objectStore(STORE_NAME);
       const reqItem = store.get(id);
 
-      reqItem.onsuccess = () => {
+      reqItem.onsuccess = async () => {
         const item = reqItem.result;
         if (item) {
           item.due += 3600000;
           item.alerted = false;
           store.put(item);
+
+          // Reschedule on Android OS
+          await cancelNativeAlarm(item.id);
+          await scheduleNativeAlarm(item.id, item.action, item.title, item.due);
         }
       };
 
@@ -824,7 +905,7 @@
       showAlert(notificationsSoundActive ? 'Sound & Vibrate Active' : 'Vibrate Only Mode', 'success');
     });
 
-    // Background Checking Loop (Runs every 4 seconds)
+    // Foreground Loop (Runs every 4 seconds when app is active on screen)
     setInterval(async () => {
       const database = await getDB();
       const tx = database.transaction(STORE_NAME, 'readwrite');
@@ -840,7 +921,6 @@
             item.alerted = true;
             store.put(item);
 
-            // Execute alert based on toggle state
             if (notificationsSoundActive) {
               playAudioAlert();
             }
