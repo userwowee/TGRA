@@ -2,12 +2,14 @@ name: Build Standalone Android APK
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
   build-apk:
     runs-on: ubuntu-latest
+
     permissions:
       contents: write
 
@@ -16,29 +18,38 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Java 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
-          distribution: 'temurin'
-          java-version: '21'
+          distribution: temurin
+          java-version: "21"
 
-      - name: Set up Node.js 20
+      - name: Set up Node.js 24
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "24"
 
-      - name: Set up Icon Generator Dependencies
+      - name: Set up build dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y fonts-dejavu-core
-          python3 -m pip install pillow
+          python3 -m pip install --upgrade pillow
 
-      - name: Initialize Capacitor App
+      - name: Initialize Capacitor Android project
+        shell: bash
         run: |
+          set -euo pipefail
+
           npm init -y
-          npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/local-notifications
+          npm install --save-exact \
+            @capacitor/core \
+            @capacitor/cli \
+            @capacitor/android \
+            @capacitor/local-notifications
+
           mkdir -p www
-          cp index.html www/
-          cat << 'EOF' > capacitor.config.json
+          cp index.html www/index.html
+
+          cat > capacitor.config.json <<'EOF'
           {
             "appId": "com.panicbutton.app",
             "appName": "e-Walnut",
@@ -51,17 +62,84 @@ jobs:
             }
           }
           EOF
+
           npx cap add android
+
           echo "org.gradle.java.home=$JAVA_HOME" >> android/gradle.properties
 
-          # Inject background and alarm permissions for Android 13+
-          sed -i '/<manifest/a\    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />\n    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />\n    <uses-permission android:name="android.permission.VIBRATE" />' android/app/src/main/AndroidManifest.xml
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
 
-          # Update Android native app label strings
-          sed -i 's/.*<\/string>/e-Walnut<\/string>/' android/app/src/main/res/values/strings.xml
-          sed -i 's/.*<\/string>/e-Walnut<\/string>/' android/app/src/main/res/values/strings.xml
+          python3 - "$MANIFEST" <<'PY'
+          import sys
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
 
-          cat << 'EOF' >> android/build.gradle
+          manifest_path = Path(sys.argv[1])
+          text = manifest_path.read_text(encoding="utf-8")
+
+          permissions = [
+              "android.permission.POST_NOTIFICATIONS",
+              "android.permission.SCHEDULE_EXACT_ALARM",
+              "android.permission.USE_EXACT_ALARM",
+              "android.permission.VIBRATE",
+          ]
+
+          additions = []
+          for permission in permissions:
+              marker = f'android:name="{permission}"'
+              if marker not in text:
+                  additions.append(
+                      f'    <uses-permission android:name="{permission}" />'
+                  )
+
+          if additions:
+              position = text.find(">")
+              if position == -1:
+                  raise SystemExit("Could not find the opening manifest tag.")
+
+              text = (
+                  text[:position + 1]
+                  + "\n"
+                  + "\n".join(additions)
+                  + text[position + 1:]
+              )
+              manifest_path.write_text(text, encoding="utf-8")
+
+          ET.parse(manifest_path)
+          print("AndroidManifest.xml validated successfully.")
+          PY
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          strings_path = Path(
+              "android/app/src/main/res/values/strings.xml"
+          )
+
+          text = strings_path.read_text(encoding="utf-8")
+
+          app_name_pattern = (
+              r'(<string\s+name="app_name"\s*>).*?(</string>)'
+          )
+
+          updated, count = re.subn(
+              app_name_pattern,
+              r'\1e-Walnut\2',
+              text,
+              count=1
+          )
+
+          if count == 0:
+              raise SystemExit(
+                  'Could not find the Android string named "app_name".'
+              )
+
+          strings_path.write_text(updated, encoding="utf-8")
+          print("Android app label set to e-Walnut.")
+          PY
+
+          cat >> android/build.gradle <<'EOF'
 
           allprojects {
               configurations.all {
@@ -74,9 +152,12 @@ jobs:
           }
           EOF
 
-      - name: Generate e-Walnut App Icons
+      - name: Generate e-Walnut app icons
+        shell: bash
         run: |
-          python3 -c '
+          set -euo pipefail
+
+          python3 - <<'PY'
           import os
           from PIL import Image, ImageDraw, ImageFont
 
@@ -93,12 +174,34 @@ jobs:
 
           font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
           font = ImageFont.truetype(font_path, 72)
-          draw.text((275, 152), "Wal", fill=color_text, font=font, anchor="mm")
-          draw.text((275, 352), "Nut", fill=color_text, font=font, anchor="mm")
 
-          fg = Image.new("RGBA", (512, 512), (0, 0, 0, 0))
-          scaled = img.resize((360, 360), Image.Resampling.LANCZOS)
-          fg.paste(scaled, (76, 76), scaled)
+          draw.text(
+              (275, 152),
+              "Wal",
+              fill=color_text,
+              font=font,
+              anchor="mm"
+          )
+          draw.text(
+              (275, 352),
+              "Nut",
+              fill=color_text,
+              font=font,
+              anchor="mm"
+          )
+
+          foreground = Image.new(
+              "RGBA",
+              (512, 512),
+              (0, 0, 0, 0)
+          )
+
+          scaled = img.resize(
+              (360, 360),
+              Image.Resampling.LANCZOS
+          )
+
+          foreground.paste(scaled, (76, 76), scaled)
 
           densities = {
               "mdpi": (48, 108),
@@ -108,27 +211,62 @@ jobs:
               "xxxhdpi": (192, 432)
           }
 
-          for density, (icon_sz, fg_sz) in densities.items():
-              res_dir = f"android/app/src/main/res/mipmap-{density}"
-              os.makedirs(res_dir, exist_ok=True)
-              img.resize((icon_sz, icon_sz), Image.Resampling.LANCZOS).save(f"{res_dir}/ic_launcher.png")
-              img.resize((icon_sz, icon_sz), Image.Resampling.LANCZOS).save(f"{res_dir}/ic_launcher_round.png")
-              fg.resize((fg_sz, fg_sz), Image.Resampling.LANCZOS).save(f"{res_dir}/ic_launcher_foreground.png")
-          '
+          for density, (icon_size, foreground_size) in densities.items():
+              resource_dir = (
+                  f"android/app/src/main/res/mipmap-{density}"
+              )
+              os.makedirs(resource_dir, exist_ok=True)
 
-      - name: Compile Debug APK
+              img.resize(
+                  (icon_size, icon_size),
+                  Image.Resampling.LANCZOS
+              ).save(
+                  f"{resource_dir}/ic_launcher.png"
+              )
+
+              img.resize(
+                  (icon_size, icon_size),
+                  Image.Resampling.LANCZOS
+              ).save(
+                  f"{resource_dir}/ic_launcher_round.png"
+              )
+
+              foreground.resize(
+                  (foreground_size, foreground_size),
+                  Image.Resampling.LANCZOS
+              ).save(
+                  f"{resource_dir}/ic_launcher_foreground.png"
+              )
+          PY
+
+      - name: Compile debug APK
+        shell: bash
         run: |
+          set -euo pipefail
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug -Dorg.gradle.java.home=$JAVA_HOME
+          ./gradlew assembleDebug \
+            --no-daemon \
+            --stacktrace \
+            -Dorg.gradle.java.home="$JAVA_HOME"
 
-      - name: Publish Direct APK Release
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: e-walnut-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish direct APK release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
           name: e-Walnut Latest Release
           draft: false
           prerelease: false
+          make_latest: true
+          overwrite_files: true
           files: android/app/build/outputs/apk/debug/app-debug.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
