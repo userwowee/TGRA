@@ -55,10 +55,7 @@ jobs:
           echo "org.gradle.java.home=$JAVA_HOME" >> android/gradle.properties
 
           # Inject background and alarm permissions for Android 13+
-          sed -i '/' android/app/src/main/AndroidManifest.xml
-          sed -i '/' android/app/src/main/AndroidManifest.xml
-          sed -i '/' android/app/src/main/AndroidManifest.xml
-          sed -i '/' android/app/src/main/AndroidManifest.xml
+          sed -i '/<manifest/a\    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />\n    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />\n    <uses-permission android:name="android.permission.VIBRATE" />' android/app/src/main/AndroidManifest.xml
 
           # Update Android native app label strings
           sed -i 's/.*<\/string>/e-Walnut<\/string>/' android/app/src/main/res/values/strings.xml
