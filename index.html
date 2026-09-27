@@ -74,7 +74,7 @@
       height: 64px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: center;
       padding: 0 16px;
       background-color: var(--md-sys-color-surface);
       position: sticky;
@@ -200,4 +200,522 @@
 
     .input-box {
       height: 54px;
-      background-color:
+      background-color: var(--md-sys-color-surface-container-highest);
+      border-radius: var(--shape-corner-inner);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+    }
+
+    .input-box input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      outline: none;
+      font-family: 'Roboto', sans-serif;
+      font-size: 16px;
+      color: var(--md-sys-color-on-surface);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background-color: var(--md-sys-color-error);
+      color: var(--md-sys-color-on-error);
+      padding: 14px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1);
+      z-index: 100;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .queue-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px;
+      background-color: var(--md-sys-color-surface-container-low);
+      font-weight: 700;
+      font-size: 18px;
+      border-top-left-radius: 16px;
+      border-top-right-radius: 16px;
+    }
+
+    .procrastinator-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--md-sys-color-outline-variant);
+      transition: .4s;
+      border-radius: 24px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: var(--md-sys-color-primary);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+
+    .queue-container {
+      flex: 1;
+      background-color: var(--md-sys-color-surface-container-low);
+      padding: 0 16px 16px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow-y: auto;
+    }
+
+    .reminder-card {
+      background-color: var(--md-sys-color-surface);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .reminder-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .reminder-title {
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    .reminder-desc {
+      font-size: 14px;
+      color: var(--md-sys-color-on-surface-variant);
+    }
+
+    .reminder-time {
+      font-size: 12px;
+      color: var(--md-sys-color-primary);
+      font-weight: 700;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .btn-plus-1hr {
+      display: none;
+      background-color: var(--md-sys-color-secondary-container);
+      color: var(--md-sys-color-on-secondary-container);
+      border: none;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .queue-container.procrastinator-active .btn-plus-1hr {
+      display: block;
+    }
+
+    .btn-delete {
+      background: transparent;
+      border: none;
+      color: var(--md-sys-color-error);
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 50%;
+    }
+  </style>
+</head>
+<body>
+  <div class="screen-container">
+    <div class="top-app-bar">
+      <div class="title">The Great Reminder App</div>
+    </div>
+
+    <div class="content-canvas">
+      <!-- Activity Selection -->
+      <div class="button-row" id="activity-row">
+        <button class="m3-btn btn-tonal activity-btn" data-activity="Eat">
+          <span class="material-symbols-rounded">restaurant</span> Eat
+        </button>
+        <button class="m3-btn btn-tonal activity-btn" data-activity="Health">
+          <span class="material-symbols-rounded">pill</span> Health
+        </button>
+        <button class="m3-btn btn-tonal activity-btn" data-activity="Groom">
+          <span class="emoji-icon">🪮</span> Groom
+        </button>
+        <button class="m3-btn btn-tonal activity-btn" data-activity="Custom">
+          <span class="material-symbols-rounded">edit</span> Custom
+        </button>
+      </div>
+
+      <!-- Text Input -->
+      <div class="input-box">
+        <input type="text" id="optional-text" placeholder="Optional notes...">
+      </div>
+
+      <!-- Time Selection -->
+      <div class="button-row">
+        <button class="m3-btn btn-filled time-btn" data-time="5">5m</button>
+        <button class="m3-btn btn-filled time-btn" data-time="15">15m</button>
+        <button class="m3-btn btn-filled time-btn" data-time="30">30m</button>
+        <button class="m3-btn btn-filled time-btn" data-time="60">1h</button>
+      </div>
+    </div>
+
+    <!-- Queue -->
+    <div class="queue-header">
+      <span>Upcoming</span>
+      <label class="procrastinator-toggle">
+        Procrastinator
+        <div class="switch">
+          <input type="checkbox" id="procrastinator-checkbox">
+          <span class="slider"></span>
+        </div>
+      </label>
+    </div>
+    <div class="queue-container" id="queue-container">
+      <!-- Reminders will be injected here -->
+    </div>
+  </div>
+
+  <div id="toast" class="toast">Select an activity first</div>
+
+  <script type="module">
+    import { LocalNotifications } from '@capacitor/local-notifications';
+
+    // UI Elements
+    const activityBtns = document.querySelectorAll('.activity-btn');
+    const timeBtns = document.querySelectorAll('.time-btn');
+    const optionalText = document.getElementById('optional-text');
+    const queueContainer = document.getElementById('queue-container');
+    const toast = document.getElementById('toast');
+    const procrastinatorCheckbox = document.getElementById('procrastinator-checkbox');
+
+    // State
+    let selectedActivity = null;
+
+    // --- DB Wrappers ---
+    const DB_NAME = 'EWalnutDB';
+    const DB_VERSION = 1;
+    const STORE_NAME = 'reminders';
+    let dbInstance = null;
+
+    function getDB() {
+      return new Promise((resolve, reject) => {
+        if (dbInstance) {
+          resolve(dbInstance);
+          return;
+        }
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onerror = event => reject(event.target.error);
+        request.onsuccess = event => {
+          dbInstance = event.target.result;
+          resolve(dbInstance);
+        };
+        request.onupgradeneeded = event => {
+          const db = event.target.result;
+          if (!db.objectStoreNames.contains(STORE_NAME)) {
+            db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+          }
+        };
+      });
+    }
+
+    async function dbAddReminder(reminder) {
+      const db = await getDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.add(reminder);
+        req.onsuccess = () => resolve();
+        req.onerror = e => reject(e.target.error);
+      });
+    }
+
+    async function dbGetReminders() {
+      const db = await getDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.getAll();
+        req.onsuccess = e => resolve(e.target.result || []);
+        req.onerror = e => reject(e.target.error);
+      });
+    }
+
+    async function dbUpdateReminderTime(id, newTime) {
+      const db = await getDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        const getReq = store.get(id);
+
+        getReq.onsuccess = e => {
+          const reminder = e.target.result;
+          if (!reminder) {
+            resolve(null);
+            return;
+          }
+          reminder.due = newTime;
+          const putReq = store.put(reminder);
+          putReq.onsuccess = () => resolve(reminder);
+          putReq.onerror = err => reject(err.target.error);
+        };
+        getReq.onerror = e => reject(e.target.error);
+      });
+    }
+
+    async function dbDeleteReminder(id) {
+      const db = await getDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.delete(id);
+        req.onsuccess = () => resolve();
+        req.onerror = e => reject(e.target.error);
+      });
+    }
+
+    // --- Native Notifications Wrapper ---
+    async function initNotifications() {
+      try {
+        const perm = await LocalNotifications.requestPermissions();
+        if (perm.display !== 'granted') {
+          console.warn('Notification permissions not granted');
+        }
+
+        // Create Channel for Android 8+
+        await LocalNotifications.createChannel({
+          id: 'ewalnut_alerts',
+          name: 'e-Walnut Alerts',
+          description: 'Timers and reminders',
+          importance: 5,
+          visibility: 1,
+          sound: 'beep.wav',
+          vibration: true
+        });
+      } catch(e) {
+         console.warn('Capacitor LocalNotifications not fully available:', e);
+      }
+    }
+
+    async function scheduleNotification(id, title, body, date) {
+      // 32-bit integer Notification ID limit fix
+      const safeId = Math.abs(id % 2147483647);
+      try {
+        await LocalNotifications.schedule({
+          notifications: [
+            {
+              title: title,
+              body: body,
+              id: safeId,
+              schedule: { at: date, allowWhileIdle: true }, // allowWhileIdle bypasses doze
+              sound: 'beep.wav',
+              smallIcon: 'ic_launcher_round',
+              iconColor: '#8B5000',
+              channelId: 'ewalnut_alerts'
+            }
+          ]
+        });
+      } catch(e) {
+        console.warn('Failed to schedule notification (are you running in a web browser without Capacitor?):', e);
+      }
+    }
+
+    async function cancelNotification(id) {
+       // 32-bit integer Notification ID limit fix
+       const safeId = Math.abs(id % 2147483647);
+       try {
+         await LocalNotifications.cancel({ notifications: [{ id: safeId }] });
+       } catch(e) {
+         console.warn('Failed to cancel notification:', e);
+       }
+    }
+
+    // --- UI Logic ---
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    function resetSelection() {
+      selectedActivity = null;
+      activityBtns.forEach(b => b.classList.remove('action-selected'));
+      optionalText.value = '';
+    }
+
+    activityBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        activityBtns.forEach(b => b.classList.remove('action-selected'));
+        btn.classList.add('action-selected');
+        selectedActivity = btn.dataset.activity;
+        optionalText.focus();
+      });
+    });
+
+    timeBtns.forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!selectedActivity) {
+          showToast('Select an activity first');
+          return;
+        }
+
+        const mins = parseInt(btn.dataset.time, 10);
+        const dueTime = Date.now() + mins * 60000;
+        const text = optionalText.value.trim();
+
+        let title = `Time to ${selectedActivity}!`;
+        if (selectedActivity === 'Custom' && text) title = text;
+        else if (selectedActivity === 'Health') title = 'Time for Health!';
+        else if (selectedActivity === 'Groom') title = 'Time to Groom!';
+        else if (selectedActivity === 'Eat') title = 'Time to Eat!';
+
+        const body = text ? text : 'A quick reminder.';
+
+        const reminder = {
+          id: Date.now(), // Unique ID, but hashed down to 32-bit before OS scheduling
+          title: title,
+          body: body,
+          due: dueTime,
+          activity: selectedActivity
+        };
+
+        // Unidirectional flow completes -> Reset UI immediately
+        resetSelection();
+
+        // Save to DB and Update UI
+        await dbAddReminder(reminder);
+        await renderQueue();
+
+        // Native Scheduling outside the DB await chain to prevent race conditions
+        scheduleNotification(reminder.id, reminder.title, reminder.body, new Date(reminder.due));
+      });
+    });
+
+    procrastinatorCheckbox.addEventListener('change', (e) => {
+      if (e.target.checked) {
+        queueContainer.classList.add('procrastinator-active');
+      } else {
+        queueContainer.classList.remove('procrastinator-active');
+      }
+    });
+
+    async function handlePlusOneHour(id) {
+      const newTime = Date.now() + 3600000; // +1 hour
+
+      // Update DB and UI
+      const reminder = await dbUpdateReminderTime(id, newTime);
+      if(reminder) {
+         await renderQueue();
+         // Cancel old, schedule new
+         await cancelNotification(id);
+         scheduleNotification(id, reminder.title, reminder.body, new Date(newTime));
+      }
+    }
+
+    async function handleDelete(id) {
+      await dbDeleteReminder(id);
+      await renderQueue();
+      cancelNotification(id);
+    }
+
+    // Make globally accessible for inline onclick handlers in renderQueue
+    window.handlePlusOneHour = handlePlusOneHour;
+    window.handleDelete = handleDelete;
+
+    async function renderQueue() {
+      const reminders = await dbGetReminders();
+      reminders.sort((a, b) => a.due - b.due);
+
+      queueContainer.innerHTML = '';
+
+      const now = Date.now();
+
+      for (const r of reminders) {
+        if (r.due < now) continue; // Skip past (could auto-delete)
+
+        const dateObj = new Date(r.due);
+        const timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        const card = document.createElement('div');
+        card.className = 'reminder-card';
+        card.innerHTML = `
+          <div class="reminder-info">
+            <div class="reminder-title">${r.title}</div>
+            ${r.body !== r.title && r.body !== 'A quick reminder.' ? `<div class="reminder-desc">${r.body}</div>` : ''}
+            <div class="reminder-time">${timeStr}</div>
+          </div>
+          <div class="card-actions">
+            <button class="btn-plus-1hr" onclick="window.handlePlusOneHour(${r.id})">+ 1 Hr</button>
+            <button class="btn-delete" onclick="window.handleDelete(${r.id})">
+              <span class="material-symbols-rounded">delete</span>
+            </button>
+          </div>
+        `;
+        queueContainer.appendChild(card);
+      }
+    }
+
+    // --- Init ---
+    window.addEventListener('DOMContentLoaded', async () => {
+      await getDB();
+      await initNotifications();
+      await renderQueue();
+    });
+  </script>
+</body>
+</html>
