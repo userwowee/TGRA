@@ -12,7 +12,6 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,600,0..1,0" />
 
   <style>
-    /* Material 3 Expressive Light Amber Token Definitions */
     :root {
       --md-sys-color-primary: #8B5000;
       --md-sys-color-on-primary: #FFFFFF;
@@ -36,7 +35,6 @@
       --md-sys-color-on-error: #FFFFFF;
       --md-sys-color-error-container: #F9DEDC;
       --md-sys-color-on-error-container: #410E0B;
-
       --shape-corner-btn: 10px;
       --shape-corner-inner: 8px;
     }
@@ -59,7 +57,6 @@
       min-height: 100vh;
     }
 
-    /* Screen Frame */
     .screen-container {
       width: 100%;
       max-width: 412px;
@@ -73,7 +70,6 @@
       -webkit-overflow-scrolling: touch;
     }
 
-    /* Top App Bar */
     .top-app-bar {
       height: 64px;
       display: flex;
@@ -85,6 +81,7 @@
       top: 0;
       z-index: 10;
     }
+
     .top-app-bar .title {
       font-size: 21px;
       font-weight: 700;
@@ -94,6 +91,7 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
+
     .icon-btn {
       width: 44px;
       height: 44px;
@@ -107,12 +105,12 @@
       cursor: pointer;
       transition: background 0.2s;
     }
+
     .icon-btn:active {
       background: var(--md-sys-color-surface-container-high);
       transform: scale(0.96);
     }
 
-    /* Main Content Canvas */
     .content-canvas {
       padding: 4px 16px 28px 16px;
       display: flex;
@@ -121,7 +119,6 @@
       flex: 1;
     }
 
-    /* Connected Button Group Rows */
     .button-row {
       display: flex;
       flex-direction: row;
@@ -129,7 +126,6 @@
       width: 100%;
     }
 
-    /* Button Foundations */
     .m3-btn {
       flex: 1;
       height: 52px;
@@ -147,42 +143,61 @@
       overflow: hidden;
       transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.15s, outline 0.15s;
     }
+
     .m3-btn .material-symbols-rounded {
       font-size: 18px;
     }
+
     .m3-btn .emoji-icon {
       font-size: 17px;
       line-height: 1;
     }
+
     .m3-btn:active {
       transform: scale(0.96);
     }
 
-    /* Inner Adjoining Corners */
     .button-row .m3-btn:first-child {
       border-radius: var(--shape-corner-btn) var(--shape-corner-inner) var(--shape-corner-inner) var(--shape-corner-btn);
     }
+
     .button-row .m3-btn:not(:first-child):not(:last-child) {
       border-radius: var(--shape-corner-inner);
     }
+
     .button-row .m3-btn:last-child {
       border-radius: var(--shape-corner-inner) var(--shape-corner-btn) var(--shape-corner-btn) var(--shape-corner-inner);
     }
 
-    /* Button Roles */
     .btn-elevated {
       background-color: var(--md-sys-color-surface);
       color: var(--md-sys-color-primary);
       box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
     }
+
     .btn-tonal {
       background-color: var(--md-sys-color-secondary-container);
       color: var(--md-sys-color-on-secondary-container);
     }
+
     .btn-filled {
       background-color: var(--md-sys-color-primary);
       color: var(--md-sys-color-on-primary);
     }
+
     .btn-outlined {
       background-color: var(--md-sys-color-surface);
-      border: 1px solid var(--md-sys-color-out
+      border: 1px solid var(--md-sys-color-outline-variant);
+      color: var(--md-sys-color-secondary);
+    }
+
+    .action-selected {
+      outline: 3px solid #211A14 !important;
+      outline-offset: -2px;
+      box-shadow: 0 0 12px rgba(33, 26, 20, 0.45) !important;
+      transform: scale(0.97);
+    }
+
+    .input-box {
+      height: 54px;
+      background-color:
