@@ -29,7 +29,9 @@ jobs:
           node-version: "24"
 
       - name: Set up build dependencies
+        shell: bash
         run: |
+          set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y fonts-dejavu-core
           python3 -m pip install --upgrade pillow
@@ -40,6 +42,7 @@ jobs:
           set -euo pipefail
 
           npm init -y
+
           npm install --save-exact \
             @capacitor/core \
             @capacitor/cli \
@@ -72,7 +75,6 @@ jobs:
           python3 - "$MANIFEST" <<'PY'
           import sys
           from pathlib import Path
-          import xml.etree.ElementTree as ET
 
           manifest_path = Path(sys.argv[1])
           text = manifest_path.read_text(encoding="utf-8")
@@ -85,6 +87,7 @@ jobs:
           ]
 
           additions = []
+
           for permission in permissions:
               marker = f'android:name="{permission}"'
               if marker not in text:
@@ -94,8 +97,11 @@ jobs:
 
           if additions:
               position = text.find(">")
+
               if position == -1:
-                  raise SystemExit("Could not find the opening manifest tag.")
+                  raise SystemExit(
+                      "Could not find the opening manifest tag."
+                  )
 
               text = (
                   text[:position + 1]
@@ -103,10 +109,10 @@ jobs:
                   + "\n".join(additions)
                   + text[position + 1:]
               )
+
               manifest_path.write_text(text, encoding="utf-8")
 
-          ET.parse(manifest_path)
-          print("AndroidManifest.xml validated successfully.")
+          print("AndroidManifest.xml permissions updated successfully.")
           PY
 
           python3 - <<'PY'
@@ -119,12 +125,8 @@ jobs:
 
           text = strings_path.read_text(encoding="utf-8")
 
-          app_name_pattern = (
-              r'(<string\s+name="app_name"\s*>).*?(</string>)'
-          )
-
           updated, count = re.subn(
-              app_name_pattern,
+              r'(<string\s+name="app_name"\s*>).*?(</string>)',
               r'\1e-Walnut\2',
               text,
               count=1
@@ -136,21 +138,9 @@ jobs:
               )
 
           strings_path.write_text(updated, encoding="utf-8")
+
           print("Android app label set to e-Walnut.")
           PY
-
-          cat >> android/build.gradle <<'EOF'
-
-          allprojects {
-              configurations.all {
-                  resolutionStrategy {
-                      force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
-                      force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22'
-                      force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'
-                  }
-              }
-          }
-          EOF
 
       - name: Generate e-Walnut app icons
         shell: bash
@@ -161,18 +151,42 @@ jobs:
           import os
           from PIL import Image, ImageDraw, ImageFont
 
-          img = Image.new("RGBA", (512, 512), (255, 255, 255, 255))
+          img = Image.new(
+              "RGBA",
+              (512, 512),
+              (255, 255, 255, 255)
+          )
+
           draw = ImageDraw.Draw(img)
 
           color_e = (179, 110, 68, 255)
           color_text = (0, 0, 0, 255)
 
-          draw.rectangle([125, 30, 180, 482], fill=color_e)
-          draw.rectangle([125, 30, 370, 80], fill=color_e)
-          draw.rectangle([125, 225, 355, 275], fill=color_e)
-          draw.rectangle([125, 430, 380, 480], fill=color_e)
+          draw.rectangle(
+              [125, 30, 180, 482],
+              fill=color_e
+          )
 
-          font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+          draw.rectangle(
+              [125, 30, 370, 80],
+              fill=color_e
+          )
+
+          draw.rectangle(
+              [125, 225, 355, 275],
+              fill=color_e
+          )
+
+          draw.rectangle(
+              [125, 430, 380, 480],
+              fill=color_e
+          )
+
+          font_path = (
+              "/usr/share/fonts/truetype/"
+              "dejavu/DejaVuSans-Bold.ttf"
+          )
+
           font = ImageFont.truetype(font_path, 72)
 
           draw.text(
@@ -182,6 +196,7 @@ jobs:
               font=font,
               anchor="mm"
           )
+
           draw.text(
               (275, 352),
               "Nut",
@@ -211,10 +226,14 @@ jobs:
               "xxxhdpi": (192, 432)
           }
 
-          for density, (icon_size, foreground_size) in densities.items():
+          for density, sizes in densities.items():
+              icon_size, foreground_size = sizes
+
               resource_dir = (
-                  f"android/app/src/main/res/mipmap-{density}"
+                  "android/app/src/main/res/"
+                  f"mipmap-{density}"
               )
+
               os.makedirs(resource_dir, exist_ok=True)
 
               img.resize(
