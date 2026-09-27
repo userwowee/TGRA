@@ -2,14 +2,12 @@ name: Build Standalone Android APK
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
   build-apk:
     runs-on: ubuntu-latest
-
     permissions:
       contents: write
 
@@ -18,41 +16,29 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Java 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
-          distribution: temurin
-          java-version: "21"
+          distribution: 'temurin'
+          java-version: '21'
 
-      - name: Set up Node.js 24
+      - name: Set up Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: "24"
+          node-version: '20'
 
-      - name: Set up build dependencies
-        shell: bash
+      - name: Set up Icon Generator Dependencies
         run: |
-          set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y fonts-dejavu-core
-          python3 -m pip install --upgrade pillow
+          python3 -m pip install pillow
 
-      - name: Initialize Capacitor Android project
-        shell: bash
+      - name: Initialize Capacitor App
         run: |
-          set -euo pipefail
-
           npm init -y
-
-          npm install --save-exact \
-            @capacitor/core \
-            @capacitor/cli \
-            @capacitor/android \
-            @capacitor/local-notifications
-
+          npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/local-notifications
           mkdir -p www
-          cp index.html www/index.html
-
-          cat > capacitor.config.json <<'EOF'
+          cp index.html www/
+          cat << 'EOF' > capacitor.config.json
           {
             "appId": "com.panicbutton.app",
             "appName": "e-Walnut",
@@ -60,128 +46,63 @@ jobs:
             "plugins": {
               "LocalNotifications": {
                 "smallIcon": "ic_launcher_round",
-                "iconColor": "#8B5000"
+                "iconColor": "#8B5000",
+                "sound": "beep.wav"
               }
             }
           }
           EOF
-
           npx cap add android
-
           echo "org.gradle.java.home=$JAVA_HOME" >> android/gradle.properties
 
-          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          # Inject background and alarm permissions for Android 13+
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />' android/app/src/main/AndroidManifest.xml
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />' android/app/src/main/AndroidManifest.xml
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />' android/app/src/main/AndroidManifest.xml
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.VIBRATE" />' android/app/src/main/AndroidManifest.xml
 
-          sed -i '/^[[:space:]]*<manifest[^>]*>/a\
-              <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\
-              <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />\
-              <uses-permission android:name="android.permission.USE_EXACT_ALARM" />\
-              <uses-permission android:name="android.permission.VIBRATE" />' "$MANIFEST"
+          # Update Android native app label strings
+          sed -i 's/<string name="app_name">.*<\/string>/<string name="app_name">e-Walnut<\/string>/' android/app/src/main/res/values/strings.xml
+          sed -i 's/<string name="title_activity_main">.*<\/string>/<string name="title_activity_main">e-Walnut<\/string>/' android/app/src/main/res/values/strings.xml
 
-          echo "Android notification and vibration permissions inserted."
+          cat << 'EOF' >> android/build.gradle
 
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
+          allprojects {
+              configurations.all {
+                  resolutionStrategy {
+                      force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
+                      force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22'
+                      force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'
+                  }
+              }
+          }
+          EOF
 
-          strings_path = Path(
-              "android/app/src/main/res/values/strings.xml"
-          )
-
-          text = strings_path.read_text(encoding="utf-8")
-
-          updated, count = re.subn(
-              r'(<string\s+name="app_name"\s*>).*?(</string>)',
-              r'\1e-Walnut\2',
-              text,
-              count=1
-          )
-
-          if count == 0:
-              raise SystemExit(
-                  'Could not find the Android string named "app_name".'
-              )
-
-          strings_path.write_text(updated, encoding="utf-8")
-
-          print("Android app label set to e-Walnut.")
-          PY
-
-      - name: Generate e-Walnut app icons
-        shell: bash
+      - name: Generate e-Walnut App Icons
         run: |
-          set -euo pipefail
-
-          python3 - <<'PY'
+          python3 -c '
           import os
           from PIL import Image, ImageDraw, ImageFont
 
-          img = Image.new(
-              "RGBA",
-              (512, 512),
-              (255, 255, 255, 255)
-          )
-
+          img = Image.new("RGBA", (512, 512), (255, 255, 255, 255))
           draw = ImageDraw.Draw(img)
 
           color_e = (179, 110, 68, 255)
           color_text = (0, 0, 0, 255)
 
-          draw.rectangle(
-              [125, 30, 180, 482],
-              fill=color_e
-          )
+          draw.rectangle([125, 30, 180, 482], fill=color_e)
+          draw.rectangle([125, 30, 370, 80], fill=color_e)
+          draw.rectangle([125, 225, 355, 275], fill=color_e)
+          draw.rectangle([125, 430, 380, 480], fill=color_e)
 
-          draw.rectangle(
-              [125, 30, 370, 80],
-              fill=color_e
-          )
-
-          draw.rectangle(
-              [125, 225, 355, 275],
-              fill=color_e
-          )
-
-          draw.rectangle(
-              [125, 430, 380, 480],
-              fill=color_e
-          )
-
-          font_path = (
-              "/usr/share/fonts/truetype/"
-              "dejavu/DejaVuSans-Bold.ttf"
-          )
-
+          font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
           font = ImageFont.truetype(font_path, 72)
+          draw.text((275, 152), "Wal", fill=color_text, font=font, anchor="mm")
+          draw.text((275, 352), "Nut", fill=color_text, font=font, anchor="mm")
 
-          draw.text(
-              (275, 152),
-              "Wal",
-              fill=color_text,
-              font=font,
-              anchor="mm"
-          )
-
-          draw.text(
-              (275, 352),
-              "Nut",
-              fill=color_text,
-              font=font,
-              anchor="mm"
-          )
-
-          foreground = Image.new(
-              "RGBA",
-              (512, 512),
-              (0, 0, 0, 0)
-          )
-
-          scaled = img.resize(
-              (360, 360),
-              Image.Resampling.LANCZOS
-          )
-
-          foreground.paste(scaled, (76, 76), scaled)
+          fg = Image.new("RGBA", (512, 512), (0, 0, 0, 0))
+          scaled = img.resize((360, 360), Image.Resampling.LANCZOS)
+          fg.paste(scaled, (76, 76), scaled)
 
           densities = {
               "mdpi": (48, 108),
@@ -191,66 +112,27 @@ jobs:
               "xxxhdpi": (192, 432)
           }
 
-          for density, sizes in densities.items():
-              icon_size, foreground_size = sizes
+          for density, (icon_sz, fg_sz) in densities.items():
+              res_dir = f"android/app/src/main/res/mipmap-{density}"
+              os.makedirs(res_dir, exist_ok=True)
+              img.resize((icon_sz, icon_sz), Image.Resampling.LANCZOS).save(f"{res_dir}/ic_launcher.png")
+              img.resize((icon_sz, icon_sz), Image.Resampling.LANCZOS).save(f"{res_dir}/ic_launcher_round.png")
+              fg.resize((fg_sz, fg_sz), Image.Resampling.LANCZOS).save(f"{res_dir}/ic_launcher_foreground.png")
+          '
 
-              resource_dir = (
-                  "android/app/src/main/res/"
-                  f"mipmap-{density}"
-              )
-
-              os.makedirs(resource_dir, exist_ok=True)
-
-              img.resize(
-                  (icon_size, icon_size),
-                  Image.Resampling.LANCZOS
-              ).save(
-                  f"{resource_dir}/ic_launcher.png"
-              )
-
-              img.resize(
-                  (icon_size, icon_size),
-                  Image.Resampling.LANCZOS
-              ).save(
-                  f"{resource_dir}/ic_launcher_round.png"
-              )
-
-              foreground.resize(
-                  (foreground_size, foreground_size),
-                  Image.Resampling.LANCZOS
-              ).save(
-                  f"{resource_dir}/ic_launcher_foreground.png"
-              )
-          PY
-
-      - name: Compile debug APK
-        shell: bash
+      - name: Compile Debug APK
         run: |
-          set -euo pipefail
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug \
-            --no-daemon \
-            --stacktrace \
-            -Dorg.gradle.java.home="$JAVA_HOME"
+          ./gradlew assembleDebug -Dorg.gradle.java.home=$JAVA_HOME
 
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: e-walnut-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
-          retention-days: 30
-
-      - name: Publish direct APK release
+      - name: Publish Direct APK Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
           name: e-Walnut Latest Release
           draft: false
           prerelease: false
-          make_latest: true
-          overwrite_files: true
           files: android/app/build/outputs/apk/debug/app-debug.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
