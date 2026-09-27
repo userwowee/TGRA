@@ -53,17 +53,16 @@ jobs:
           }
           EOF
           npx cap add android
+          npx cap sync android
           echo "org.gradle.java.home=$JAVA_HOME" >> android/gradle.properties
 
-          # Inject background and alarm permissions for Android 13+
-          sed -i '/<application/i \    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />' android/app/src/main/AndroidManifest.xml
-          sed -i '/<application/i \    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />' android/app/src/main/AndroidManifest.xml
-          sed -i '/<application/i \    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />' android/app/src/main/AndroidManifest.xml
-          sed -i '/<application/i \    <uses-permission android:name="android.permission.VIBRATE" />' android/app/src/main/AndroidManifest.xml
+          sed -i '/' android/app/src/main/AndroidManifest.xml
+          sed -i '/' android/app/src/main/AndroidManifest.xml
+          sed -i '/' android/app/src/main/AndroidManifest.xml
+          sed -i '/' android/app/src/main/AndroidManifest.xml
 
-          # Update Android native app label strings
-          sed -i 's/<string name="app_name">.*<\/string>/<string name="app_name">e-Walnut<\/string>/' android/app/src/main/res/values/strings.xml
-          sed -i 's/<string name="title_activity_main">.*<\/string>/<string name="title_activity_main">e-Walnut<\/string>/' android/app/src/main/res/values/strings.xml
+          sed -i 's/.*<\/string>/e-Walnut<\/string>/' android/app/src/main/res/values/strings.xml
+          sed -i 's/.*<\/string>/e-Walnut<\/string>/' android/app/src/main/res/values/strings.xml
 
           cat << 'EOF' >> android/build.gradle
 
