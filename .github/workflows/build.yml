@@ -72,48 +72,13 @@ jobs:
 
           MANIFEST="android/app/src/main/AndroidManifest.xml"
 
-          python3 - "$MANIFEST" <<'PY'
-          import sys
-          from pathlib import Path
+          sed -i '/^[[:space:]]*<manifest[^>]*>/a\
+              <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\
+              <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />\
+              <uses-permission android:name="android.permission.USE_EXACT_ALARM" />\
+              <uses-permission android:name="android.permission.VIBRATE" />' "$MANIFEST"
 
-          manifest_path = Path(sys.argv[1])
-          text = manifest_path.read_text(encoding="utf-8")
-
-          permissions = [
-              "android.permission.POST_NOTIFICATIONS",
-              "android.permission.SCHEDULE_EXACT_ALARM",
-              "android.permission.USE_EXACT_ALARM",
-              "android.permission.VIBRATE",
-          ]
-
-          additions = []
-
-          for permission in permissions:
-              marker = f'android:name="{permission}"'
-              if marker not in text:
-                  additions.append(
-                      f'    <uses-permission android:name="{permission}" />'
-                  )
-
-          if additions:
-              position = text.find(">")
-
-              if position == -1:
-                  raise SystemExit(
-                      "Could not find the opening manifest tag."
-                  )
-
-              text = (
-                  text[:position + 1]
-                  + "\n"
-                  + "\n".join(additions)
-                  + text[position + 1:]
-              )
-
-              manifest_path.write_text(text, encoding="utf-8")
-
-          print("AndroidManifest.xml permissions updated successfully.")
-          PY
+          echo "Android notification and vibration permissions inserted."
 
           python3 - <<'PY'
           from pathlib import Path
