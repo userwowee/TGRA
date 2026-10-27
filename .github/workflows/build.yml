@@ -112,14 +112,32 @@ jobs:
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
+      # The release is recreated rather than updated: replacing only the asset
+      # leaves the release page showing the date and commit of the first build.
+      - name: Remove Previous Release
+        if: github.ref == 'refs/heads/main'
+        id: stamp
+        run: |
+          echo "when=$(date -u '+%Y-%m-%d %H:%M UTC')" >> "$GITHUB_OUTPUT"
+          gh release delete latest --yes --cleanup-tag || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Publish Direct APK Release
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
-          name: e-Walnut Latest Release
+          target_commitish: ${{ github.sha }}
+          name: e-Walnut ${{ github.run_number }}
+          body: |
+            Built ${{ steps.stamp.outputs.when }} from `${{ github.sha }}`.
+
+            Install: download `app-debug.apk` below, tap it, allow installs from
+            this source, then allow notifications on first launch.
           draft: false
           prerelease: false
+          make_latest: true
           files: android/app/build/outputs/apk/debug/app-debug.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
