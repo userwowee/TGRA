@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "The Great Reminder App - two-tap reminder capture with native Android alarms",
   "private": true,
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "scripts": {
     "www": "rm -rf www && mkdir -p www && cp index.html www/ && python3 tools/bundle_fonts.py",
     "android:add": "npx cap add android && python3 tools/patch_manifest.py",
