@@ -1,0 +1,11 @@
+{
+  "appId": "com.panicbutton.app",
+  "appName": "e-Walnut",
+  "webDir": "www",
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_launcher_round",
+      "iconColor": "#8B5000"
+    }
+  }
+}

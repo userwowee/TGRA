@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>The Great Reminder App</title>
   
   <!-- Fonts: Roboto & Material Symbols Rounded -->
@@ -10,8 +10,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,600,0..1,0" />
+  <!-- Offline copies of the two fonts above, bundled into the APK at build time. -->
+  <link rel="stylesheet" href="fonts/fonts.css" />
 
   <style>
+    /* Material 3 Expressive Light Amber Token Definitions */
     :root {
       --md-sys-color-primary: #8B5000;
       --md-sys-color-on-primary: #FFFFFF;
@@ -35,6 +38,7 @@
       --md-sys-color-on-error: #FFFFFF;
       --md-sys-color-error-container: #F9DEDC;
       --md-sys-color-on-error-container: #410E0B;
+
       --shape-corner-btn: 10px;
       --shape-corner-inner: 8px;
     }
@@ -47,41 +51,39 @@
       user-select: none;
     }
 
-html, body {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  background-color: #FFF8F5; /* Matches theme surface directly */
-  font-family: 'Roboto', sans-serif;
-  color: var(--md-sys-color-on-surface);
-}
+    html, body {
+      width: 100%;
+      height: 100%;
+      background-color: var(--md-sys-color-surface);
+      font-family: 'Roboto', sans-serif;
+      color: var(--md-sys-color-on-surface);
+    }
 
-/* Screen Frame */
-.screen-container {
-  width: 100%;
-  height: 100%;
-  min-height: 100%;
-  background-color: var(--md-sys-color-surface);
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-}
+    /* Screen Frame */
+    .screen-container {
+      width: 100%;
+      height: 100%;
+      min-height: 100%;
+      background-color: var(--md-sys-color-surface);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
 
+    /* Top App Bar */
     .top-app-bar {
-      height: 64px;
+      height: calc(64px + env(safe-area-inset-top, 0px));
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 16px;
+      padding: env(safe-area-inset-top, 0px) 16px 0 16px;
       background-color: var(--md-sys-color-surface);
       position: sticky;
       top: 0;
       z-index: 10;
     }
-
     .top-app-bar .title {
       font-size: 21px;
       font-weight: 700;
@@ -91,7 +93,6 @@ html, body {
       overflow: hidden;
       text-overflow: ellipsis;
     }
-
     .icon-btn {
       width: 44px;
       height: 44px;
@@ -105,20 +106,21 @@ html, body {
       cursor: pointer;
       transition: background 0.2s;
     }
-
     .icon-btn:active {
       background: var(--md-sys-color-surface-container-high);
       transform: scale(0.96);
     }
 
+    /* Main Content Canvas */
     .content-canvas {
-      padding: 4px 16px 28px 16px;
+      padding: 4px 16px calc(28px + env(safe-area-inset-bottom, 0px)) 16px;
       display: flex;
       flex-direction: column;
       gap: 12px;
       flex: 1;
     }
 
+    /* Connected Button Group Rows */
     .button-row {
       display: flex;
       flex-direction: row;
@@ -126,6 +128,7 @@ html, body {
       width: 100%;
     }
 
+    /* Button Foundations */
     .m3-btn {
       flex: 1;
       height: 52px;
@@ -143,54 +146,49 @@ html, body {
       overflow: hidden;
       transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.15s, outline 0.15s;
     }
-
     .m3-btn .material-symbols-rounded {
       font-size: 18px;
     }
-
     .m3-btn .emoji-icon {
       font-size: 17px;
       line-height: 1;
     }
-
     .m3-btn:active {
       transform: scale(0.96);
     }
 
+    /* Inner Adjoining Corners */
     .button-row .m3-btn:first-child {
       border-radius: var(--shape-corner-btn) var(--shape-corner-inner) var(--shape-corner-inner) var(--shape-corner-btn);
     }
-
     .button-row .m3-btn:not(:first-child):not(:last-child) {
       border-radius: var(--shape-corner-inner);
     }
-
     .button-row .m3-btn:last-child {
       border-radius: var(--shape-corner-inner) var(--shape-corner-btn) var(--shape-corner-btn) var(--shape-corner-inner);
     }
 
+    /* Button Roles */
     .btn-elevated {
       background-color: var(--md-sys-color-surface);
       color: var(--md-sys-color-primary);
       box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
     }
-
     .btn-tonal {
       background-color: var(--md-sys-color-secondary-container);
       color: var(--md-sys-color-on-secondary-container);
     }
-
     .btn-filled {
       background-color: var(--md-sys-color-primary);
       color: var(--md-sys-color-on-primary);
     }
-
     .btn-outlined {
       background-color: var(--md-sys-color-surface);
       border: 1px solid var(--md-sys-color-outline-variant);
       color: var(--md-sys-color-secondary);
     }
 
+    /* Selection Highlight */
     .action-selected {
       outline: 3px solid #211A14 !important;
       outline-offset: -2px;
@@ -198,6 +196,859 @@ html, body {
       transform: scale(0.97);
     }
 
+    /* Filled Text Field */
     .input-box {
       height: 54px;
-      background-color:
+      background-color: var(--md-sys-color-surface-container-highest);
+      border-radius: 8px 8px 0 0;
+      border-bottom: 2px solid var(--md-sys-color-outline);
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      gap: 10px;
+      margin: 4px 0;
+      transition: border-bottom-color 0.2s;
+    }
+    .input-box:focus-within {
+      border-bottom-color: var(--md-sys-color-primary);
+      background-color: var(--md-sys-color-surface-container-high);
+    }
+    .input-box .material-symbols-rounded {
+      color: var(--md-sys-color-on-surface-variant);
+      font-size: 20px;
+    }
+    .input-box input {
+      flex: 1;
+      height: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      font-family: 'Roboto', sans-serif;
+      font-size: 14px;
+      color: var(--md-sys-color-on-surface);
+      user-select: text;
+    }
+    .input-box input::placeholder {
+      color: var(--md-sys-color-on-surface-variant);
+      font-size: 13px;
+    }
+
+    /* Interval Trigger Buttons */
+    .time-row .m3-btn {
+      height: 42px;
+      font-size: 11.5px;
+      font-weight: 600;
+    }
+
+    /* Reminders Queue Section */
+    .queue-section {
+      margin-top: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .queue-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2px;
+    }
+    .queue-title-area {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .queue-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--md-sys-color-on-surface);
+    }
+
+    /* Procrastinator Toggle Button */
+    .procrastinator-toggle {
+      border: 1px solid var(--md-sys-color-outline-variant);
+      background-color: var(--md-sys-color-surface-container);
+      color: var(--md-sys-color-on-surface-variant);
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+    .procrastinator-toggle.active {
+      background-color: var(--md-sys-color-secondary-container);
+      color: var(--md-sys-color-on-secondary-container);
+      border-color: var(--md-sys-color-primary);
+      box-shadow: 0 1px 4px rgba(139, 80, 0, 0.2);
+    }
+
+    .queue-badge {
+      font-size: 12px;
+      font-weight: 700;
+      background-color: var(--md-sys-color-primary);
+      color: var(--md-sys-color-on-primary);
+      padding: 2px 10px;
+      border-radius: 12px;
+    }
+
+    /* Queue Cards */
+    .queue-container {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .task-card {
+      background-color: var(--md-sys-color-surface-container-low);
+      border: 1px solid var(--md-sys-color-outline-variant);
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    .task-row-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .task-meta-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--md-sys-color-on-surface);
+      word-break: break-word;
+      flex: 1;
+    }
+    .card-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .card-act-btn {
+      border: none;
+      outline: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: 'Roboto', sans-serif;
+      transition: transform 0.1s;
+    }
+    .card-act-btn:active {
+      transform: scale(0.95);
+    }
+    .card-act-btn.done {
+      background-color: var(--md-sys-color-primary);
+      color: var(--md-sys-color-on-primary);
+    }
+    .card-act-btn.cancel {
+      background-color: var(--md-sys-color-secondary-container);
+      color: var(--md-sys-color-on-secondary-container);
+    }
+
+    /* Expiry and +1 Hr row */
+    .task-row-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--md-sys-color-surface-container-highest);
+      padding-top: 6px;
+      margin-top: 2px;
+    }
+    .task-meta-sub {
+      font-size: 12px;
+      color: var(--md-sys-color-primary);
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+    .task-meta-sub.overdue {
+      color: var(--md-sys-color-error);
+    }
+
+    .btn-extend-hour {
+      border: 1px solid var(--md-sys-color-outline-variant);
+      background-color: var(--md-sys-color-surface);
+      color: var(--md-sys-color-on-surface);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn-extend-hour:active {
+      transform: scale(0.94);
+      background-color: var(--md-sys-color-secondary-container);
+    }
+    .hidden {
+      display: none !important;
+    }
+
+    .queue-empty {
+      text-align: center;
+      font-size: 13px;
+      color: var(--md-sys-color-outline);
+      background-color: var(--md-sys-color-surface-container-low);
+      border: 1px dashed var(--md-sys-color-outline-variant);
+      border-radius: 8px;
+      padding: 24px 12px;
+    }
+
+    /* M3 Expressive Alert Tokens */
+    .toast {
+      position: fixed;
+      top: calc(18px + env(safe-area-inset-top, 0px));
+      left: 50%;
+      transform: translateX(-50%) translateY(-24px);
+      padding: 10px 18px;
+      border-radius: 24px;
+      font-size: 13px;
+      font-weight: 700;
+      opacity: 0;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
+      z-index: 100;
+    }
+    .toast .material-symbols-rounded {
+      font-size: 18px;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    .toast.toast-success {
+      background-color: var(--md-sys-color-primary-container);
+      color: var(--md-sys-color-on-primary-container);
+      border: 1px solid var(--md-sys-color-outline-variant);
+    }
+    .toast.toast-warning {
+      background-color: var(--md-sys-color-error-container);
+      color: var(--md-sys-color-on-error-container);
+      border: 1px solid #F2B8B5;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="screen-container">
+    
+    <!-- Color-Matched Alerts -->
+    <div id="toast" class="toast toast-success">
+      <span class="material-symbols-rounded" id="toastIcon">check_circle</span>
+      <span id="toastMsg">Reminder Captured</span>
+    </div>
+
+    <!-- Top App Bar -->
+    <header class="top-app-bar">
+      <div class="title">The Great Reminder App</div>
+      <button class="icon-btn" id="bellBtn" title="Toggle Notifications">
+        <span class="material-symbols-rounded" id="bellIcon">notifications</span>
+      </button>
+    </header>
+
+    <!-- Main Content Canvas -->
+    <main class="content-canvas">
+
+      <!-- STEP 1: Action Selector Rows -->
+      <div class="button-row">
+        <button class="m3-btn btn-elevated action-btn" data-action="Think"><span class="material-symbols-rounded">lightbulb</span>Think</button>
+        <button class="m3-btn btn-tonal action-btn" data-action="Relax"><span class="material-symbols-rounded">local_bar</span>Relax</button>
+        <button class="m3-btn btn-filled action-btn" data-action="Pray"><span class="material-symbols-rounded">self_improvement</span>Pray</button>
+      </div>
+
+      <div class="button-row">
+        <button class="m3-btn btn-elevated action-btn" data-action="Call"><span class="material-symbols-rounded">call</span>Call</button>
+        <button class="m3-btn btn-tonal action-btn" data-action="Email"><span class="material-symbols-rounded">send</span>Email</button>
+        <button class="m3-btn btn-filled action-btn" data-action="Whatsapp"><span class="material-symbols-rounded">phone_in_talk</span>Whatsapp</button>
+      </div>
+
+      <div class="button-row">
+        <button class="m3-btn btn-elevated action-btn" data-action="Go"><span class="material-symbols-rounded">directions_walk</span>Go</button>
+        <button class="m3-btn btn-tonal action-btn" data-action="Buy"><span class="material-symbols-rounded">shopping_cart</span>Buy</button>
+        <button class="m3-btn btn-filled action-btn" data-action="Fetch / Send"><span class="material-symbols-rounded">local_shipping</span>Fetch / Send</button>
+      </div>
+
+      <div class="button-row">
+        <button class="m3-btn btn-elevated action-btn" data-action="Exercise"><span class="material-symbols-rounded">pool</span>Exercise</button>
+        <button class="m3-btn btn-tonal action-btn" data-action="Groom"><span class="emoji-icon">🪮</span>Groom</button>
+        <button class="m3-btn btn-filled action-btn" data-action="Health"><span class="material-symbols-rounded">pill</span>Health</button>
+      </div>
+
+      <!-- STEP 2: Task Input Field -->
+      <div class="input-box">
+        <span class="material-symbols-rounded">edit</span>
+        <input type="text" id="taskInput" placeholder="Person, task or item (optional)" autocomplete="off" />
+      </div>
+
+      <!-- STEP 3: Time Interval Trigger Rows -->
+      <div class="button-row time-row">
+        <button class="m3-btn btn-outlined time-btn" data-mins="15">15 Mins</button>
+        <button class="m3-btn btn-outlined time-btn" data-mins="30">30 Mins</button>
+        <button class="m3-btn btn-outlined time-btn" data-mins="45">45 Mins</button>
+        <button class="m3-btn btn-outlined time-btn" data-mins="60">60 Mins</button>
+      </div>
+
+      <div class="button-row time-row">
+        <button class="m3-btn btn-elevated time-btn" data-mins="120">2 Hours</button>
+        <button class="m3-btn btn-elevated time-btn" data-mins="240">4 Hours</button>
+        <button class="m3-btn btn-elevated time-btn" data-mins="360">6 Hours</button>
+        <button class="m3-btn btn-elevated time-btn" data-mins="480">8 Hours</button>
+      </div>
+
+      <div class="button-row time-row">
+        <button class="m3-btn btn-elevated time-btn" data-mins="600">10 Hours</button>
+        <button class="m3-btn btn-elevated time-btn" data-mins="720">12 Hours</button>
+        <button class="m3-btn btn-tonal time-btn" data-mins="eod">End of Day</button>
+        <button class="m3-btn btn-tonal time-btn" data-mins="next_day">Next Day</button>
+      </div>
+
+      <div class="button-row time-row">
+        <button class="m3-btn btn-tonal time-btn" data-mins="next_noon">Next Noon</button>
+        <button class="m3-btn btn-tonal time-btn" data-mins="next_night">Next Night</button>
+        <button class="m3-btn btn-filled time-btn" data-mins="2880">2 Days</button>
+        <button class="m3-btn btn-filled time-btn" data-mins="4320">3 Days</button>
+      </div>
+
+      <div class="button-row time-row">
+        <button class="m3-btn btn-filled time-btn" data-mins="7200">5 Days</button>
+        <button class="m3-btn btn-filled time-btn" data-mins="14400">10 Days</button>
+        <button class="m3-btn btn-filled time-btn" data-mins="20160">2 Weeks</button>
+        <button class="m3-btn btn-filled time-btn" data-mins="30240">3 Weeks</button>
+      </div>
+
+      <!-- Reminders in Queue Header -->
+      <section class="queue-section">
+        <div class="queue-header">
+          <div class="queue-title-area">
+            <div class="queue-title">Reminders in Queue</div>
+            <button class="procrastinator-toggle" id="procrastinatorBtn">
+              <span class="material-symbols-rounded" style="font-size:14px;">snooze</span>
+              <span>Procrastinator</span>
+            </button>
+          </div>
+          <span class="queue-badge" id="queueCount">0</span>
+        </div>
+        <div class="queue-container" id="queueList"></div>
+      </section>
+
+    </main>
+
+  </div>
+
+  <script>
+    const PREF_SOUND = 'ewalnut.sound';
+    const PREF_PROCRASTINATOR = 'ewalnut.procrastinator';
+    const CHANNEL_LOUD = 'ewalnut_alerts';
+    const CHANNEL_QUIET = 'ewalnut_quiet';
+
+    let selectedAction = null;
+    let notificationsSoundActive = readPref(PREF_SOUND, true);
+    let procrastinatorEnabled = readPref(PREF_PROCRASTINATOR, false);
+    let toastTimeout = null;
+    let nativeEngineReady = null;
+
+    function readPref(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw === null ? fallback : raw === 'true';
+      } catch (e) {
+        return fallback;
+      }
+    }
+
+    function writePref(key, value) {
+      try {
+        localStorage.setItem(key, value ? 'true' : 'false');
+      } catch (e) {
+        /* private mode or storage disabled: preference stays session-only */
+      }
+    }
+
+    // Capacitor Native Bridge Detection (resolved lazily: the bridge is injected
+    // by the Android WebView, and is absent in a plain browser)
+    function nativeNotifications() {
+      return window.Capacitor?.Plugins?.LocalNotifications || null;
+    }
+
+    // Initialize Native Android Notification Channels & Permissions (once)
+    function initNativeNotificationEngine() {
+      if (!nativeEngineReady) {
+        nativeEngineReady = setupNativeNotificationEngine().catch((e) => {
+          console.warn('Native notifications init error:', e);
+          nativeEngineReady = null;
+        });
+      }
+      return nativeEngineReady;
+    }
+
+    async function setupNativeNotificationEngine() {
+      const plugin = nativeNotifications();
+      if (!plugin) return;
+
+      const status = await plugin.checkPermissions();
+      if (status.display !== 'granted') {
+        await plugin.requestPermissions();
+      }
+
+      // An Android channel's sound and importance are fixed once created, so the
+      // bell toggle picks between two channels instead of editing one.
+      await plugin.createChannel({
+        id: CHANNEL_LOUD,
+        name: 'e-Walnut Reminders',
+        description: 'High-priority task alerts with sound and vibration',
+        importance: 5,
+        visibility: 1,
+        vibration: true
+      });
+
+      await plugin.createChannel({
+        id: CHANNEL_QUIET,
+        name: 'e-Walnut Reminders (Quiet)',
+        description: 'Task alerts without sound',
+        importance: 2,
+        visibility: 1,
+        vibration: false
+      });
+
+      // A reminder that fired while the app was closed is already handled by the
+      // OS: reconcile the queue when the app comes back into view.
+      plugin.addListener('localNotificationReceived', () => markDueAsAlerted());
+      plugin.addListener('localNotificationActionPerformed', () => markDueAsAlerted());
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initNativeNotificationEngine();
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) markDueAsAlerted();
+    });
+
+    // Schedule Native Android Notification (Background / Lock Screen)
+    async function scheduleNativeAlarm(id, action, title, triggerTimestamp) {
+      const plugin = nativeNotifications();
+      if (!plugin) return;
+      try {
+        await initNativeNotificationEngine();
+        const intId = Math.abs(id % 2147483647);
+        const result = await plugin.schedule({
+          notifications: [
+            {
+              id: intId,
+              title: `[${action}] Reminder`,
+              body: title || `${action} Task`,
+              schedule: { at: new Date(triggerTimestamp), allowWhileIdle: true },
+              channelId: notificationsSoundActive ? CHANNEL_LOUD : CHANNEL_QUIET
+            }
+          ]
+        });
+
+        if (result?.warning) {
+          return 'Exact alarms are off: alert may be late';
+        }
+      } catch (err) {
+        console.warn('Failed scheduling native notification:', err);
+        return 'Android rejected the alarm: in-app alert only';
+      }
+      return null;
+    }
+
+    // Cancel Scheduled Native Android Notification
+    async function cancelNativeAlarm(id) {
+      const plugin = nativeNotifications();
+      if (!plugin) return;
+      try {
+        const intId = Math.abs(id % 2147483647);
+        await plugin.cancel({
+          notifications: [{ id: intId }]
+        });
+      } catch (err) {
+        console.warn('Failed canceling native notification:', err);
+      }
+    }
+
+    // Web Audio Synthesizer (Foreground only)
+    function playAudioAlert() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const now = audioCtx.currentTime;
+
+        const osc1 = audioCtx.createOscillator();
+        const gain1 = audioCtx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(880, now);
+        gain1.gain.setValueAtTime(0.3, now);
+        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+        osc1.connect(gain1);
+        gain1.connect(audioCtx.destination);
+        osc1.start(now);
+        osc1.stop(now + 0.5);
+
+        const osc2 = audioCtx.createOscillator();
+        const gain2 = audioCtx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(1760, now + 0.15);
+        gain2.gain.setValueAtTime(0.3, now + 0.15);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+        osc2.connect(gain2);
+        gain2.connect(audioCtx.destination);
+        osc2.start(now + 0.15);
+        osc2.stop(now + 0.8);
+      } catch (err) {
+        console.warn('AudioContext not allowed or ready yet', err);
+      }
+    }
+
+    // Physical Hardware Haptic Vibration
+    function triggerHaptic() {
+      if (navigator.vibrate) {
+        navigator.vibrate([300, 150, 300]);
+      }
+    }
+
+    // Task text is user input: never let it be parsed as markup
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, (ch) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      })[ch]);
+    }
+
+    // Dynamic Color-Matched Alert Trigger
+    function showAlert(text, type = 'success') {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toastMsg');
+      const toastIcon = document.getElementById('toastIcon');
+
+      clearTimeout(toastTimeout);
+
+      if (type === 'warning') {
+        toast.className = 'toast toast-warning show';
+        toastIcon.innerText = 'warning';
+      } else {
+        toast.className = 'toast toast-success show';
+        toastIcon.innerText = 'check_circle';
+      }
+
+      toastMsg.innerText = text;
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2000);
+    }
+
+    // IndexedDB Setup
+    const DB_NAME = 'TheGreatReminderDB';
+    const STORE_NAME = 'reminders';
+    let db;
+
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = (e) => {
+      const database = e.target.result;
+      if (!database.objectStoreNames.contains(STORE_NAME)) {
+        database.createObjectStore(STORE_NAME, { keyPath: 'id' });
+      }
+    };
+    req.onsuccess = (e) => {
+      db = e.target.result;
+      loadQueue();
+    };
+    req.onerror = () => console.error("Database initialization failed.");
+
+    function getDB() {
+      return new Promise((resolve) => {
+        if (db) return resolve(db);
+        const r = indexedDB.open(DB_NAME, 1);
+        r.onsuccess = (e) => resolve(e.target.result);
+      });
+    }
+
+    // Step 1: Action Selection
+    document.querySelectorAll('.action-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('action-selected'));
+        btn.classList.add('action-selected');
+        selectedAction = btn.getAttribute('data-action');
+        document.getElementById('taskInput').focus();
+        initNativeNotificationEngine();
+      });
+    });
+
+    // Step 3: Trigger Execution
+    document.querySelectorAll('.time-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (!selectedAction) {
+          showAlert('Select an activity first', 'warning');
+          return;
+        }
+
+        const input = document.getElementById('taskInput');
+        const text = input.value.trim();
+        const intervalVal = btn.getAttribute('data-mins');
+        const intervalText = btn.innerText.trim();
+
+        saveReminder(selectedAction, text, intervalVal, intervalText);
+
+        selectedAction = null;
+        document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('action-selected'));
+        input.value = '';
+      });
+    });
+
+    function runWrite(database, work) {
+      return new Promise((resolve, reject) => {
+        const tx = database.transaction(STORE_NAME, 'readwrite');
+        work(tx.objectStore(STORE_NAME), tx);
+        tx.oncomplete = () => resolve();
+        tx.onabort = tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    async function saveReminder(action, title, intervalVal, intervalText) {
+      const database = await getDB();
+
+      const targetTimestamp = calculateTimestamp(intervalVal);
+      const reminderId = Date.now();
+      const reminderTitle = title || `${action} Task`;
+
+      const reminder = {
+        id: reminderId,
+        action: action,
+        title: reminderTitle,
+        due: targetTimestamp,
+        alerted: false,
+        created: Date.now()
+      };
+
+      try {
+        await runWrite(database, (store) => store.add(reminder));
+      } catch (err) {
+        console.error('Failed saving reminder:', err);
+        showAlert('Could not save that reminder', 'warning');
+        return;
+      }
+
+      loadQueue();
+
+      // Register with Android OS scheduler
+      const warning = await scheduleNativeAlarm(reminderId, action, reminderTitle, targetTimestamp);
+      showAlert(warning || `[${action}] set for ${intervalText}`, warning ? 'warning' : 'success');
+    }
+
+    async function loadQueue() {
+      const database = await getDB();
+      const tx = database.transaction(STORE_NAME, 'readonly');
+      const store = tx.objectStore(STORE_NAME);
+      const reqAll = store.getAll();
+
+      reqAll.onsuccess = () => {
+        const items = reqAll.result.sort((a, b) => a.due - b.due);
+        document.getElementById('queueCount').innerText = items.length;
+        renderQueueCards(items);
+      };
+    }
+
+    async function deleteReminder(id) {
+      const database = await getDB();
+      await runWrite(database, (store) => store.delete(id));
+      loadQueue();
+
+      // Cancel registered Android OS alarm
+      await cancelNativeAlarm(id);
+    }
+
+    async function extendOneHour(id) {
+      const database = await getDB();
+      let extended = null;
+
+      await runWrite(database, (store) => {
+        const reqItem = store.get(id);
+        reqItem.onsuccess = () => {
+          const item = reqItem.result;
+          if (!item) return;
+          item.due += 3600000;
+          item.alerted = false;
+          store.put(item);
+          extended = item;
+        };
+      });
+
+      if (!extended) return;
+
+      loadQueue();
+      showAlert('Extended +1 Hour', 'success');
+
+      // Reschedule on Android OS
+      await cancelNativeAlarm(extended.id);
+      await scheduleNativeAlarm(extended.id, extended.action, extended.title, extended.due);
+    }
+
+    function calculateTimestamp(val) {
+      const now = new Date();
+
+      // End of Day rolls to tomorrow once 18:00 has passed, so the reminder is
+      // never created already overdue.
+      if (val === 'eod') {
+        const target = new Date();
+        target.setHours(18, 0, 0, 0);
+        if (target.getTime() <= now.getTime()) {
+          target.setDate(target.getDate() + 1);
+        }
+        return target.getTime();
+      }
+      if (val === 'next_day') {
+        now.setDate(now.getDate() + 1);
+        now.setHours(9, 0, 0, 0);
+        return now.getTime();
+      }
+      if (val === 'next_noon') {
+        now.setDate(now.getDate() + 1);
+        now.setHours(12, 0, 0, 0);
+        return now.getTime();
+      }
+      if (val === 'next_night') {
+        now.setDate(now.getDate() + 1);
+        now.setHours(21, 0, 0, 0);
+        return now.getTime();
+      }
+      return now.getTime() + (parseInt(val, 10) * 60000);
+    }
+
+    function formatTimeDisplay(ts) {
+      const d = new Date(ts);
+      const day = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+      const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase();
+      return `${day} · ${time}`;
+    }
+
+    function renderQueueCards(items) {
+      const container = document.getElementById('queueList');
+      container.innerHTML = '';
+
+      if (items.length === 0) {
+        container.innerHTML = '<div class="queue-empty">No reminders currently active in queue.</div>';
+        return;
+      }
+
+      const now = Date.now();
+
+      items.forEach(item => {
+        const isOverdue = item.due <= now;
+        const card = document.createElement('div');
+        card.className = 'task-card';
+
+        const extendBtnHtml = `
+          <button class="btn-extend-hour ${procrastinatorEnabled ? '' : 'hidden'}" onclick="extendOneHour(${item.id})">
+            + 1 Hr
+          </button>
+        `;
+
+        card.innerHTML = `
+          <div class="task-row-top">
+            <div class="task-meta-title">[${escapeHtml(item.action)}] ${escapeHtml(item.title)}</div>
+            <div class="card-actions">
+              <button class="card-act-btn done" onclick="deleteReminder(${item.id})">Done</button>
+              <button class="card-act-btn cancel" onclick="deleteReminder(${item.id})">Cancel</button>
+            </div>
+          </div>
+          <div class="task-row-bottom">
+            <span class="task-meta-sub ${isOverdue ? 'overdue' : ''}">
+              ${isOverdue ? '⚠️ ' : ''}${formatTimeDisplay(item.due)}
+            </span>
+            ${extendBtnHtml}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // Reminders that came due while the app was backgrounded were already
+    // delivered by the OS: flag them so the foreground loop does not re-alert.
+    async function markDueAsAlerted() {
+      const database = await getDB();
+      const tx = database.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      const reqAll = store.getAll();
+
+      reqAll.onsuccess = () => {
+        const now = Date.now();
+        reqAll.result.forEach(item => {
+          if (item.due <= now && !item.alerted) {
+            item.alerted = true;
+            store.put(item);
+          }
+        });
+      };
+
+      tx.oncomplete = () => loadQueue();
+    }
+
+    // Procrastinator Toggle Switch
+    const procrastinatorBtn = document.getElementById('procrastinatorBtn');
+    procrastinatorBtn.classList.toggle('active', procrastinatorEnabled);
+    procrastinatorBtn.addEventListener('click', () => {
+      procrastinatorEnabled = !procrastinatorEnabled;
+      writePref(PREF_PROCRASTINATOR, procrastinatorEnabled);
+      procrastinatorBtn.classList.toggle('active', procrastinatorEnabled);
+      showAlert(procrastinatorEnabled ? 'Procrastinator Mode Active' : 'Procrastinator Disabled', 'success');
+      loadQueue();
+    });
+
+    // Bell Toggle: Sound Active -> Vibrate Only
+    const bellBtn = document.getElementById('bellBtn');
+    const bellIcon = document.getElementById('bellIcon');
+    bellIcon.innerText = notificationsSoundActive ? 'notifications' : 'notifications_off';
+    bellBtn.addEventListener('click', () => {
+      notificationsSoundActive = !notificationsSoundActive;
+      writePref(PREF_SOUND, notificationsSoundActive);
+      bellIcon.innerText = notificationsSoundActive ? 'notifications' : 'notifications_off';
+      showAlert(notificationsSoundActive ? 'Sound & Vibrate Active' : 'Quiet Mode: no sound', 'success');
+    });
+
+    // Foreground Loop (Runs every 4 seconds when app is active on screen)
+    setInterval(async () => {
+      const database = await getDB();
+      const tx = database.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      const reqAll = store.getAll();
+
+      reqAll.onsuccess = () => {
+        const now = Date.now();
+        let queueNeedsRefresh = false;
+
+        reqAll.result.forEach(item => {
+          if (item.due <= now && !item.alerted) {
+            item.alerted = true;
+            store.put(item);
+
+            if (notificationsSoundActive) {
+              playAudioAlert();
+            }
+            triggerHaptic();
+
+            showAlert(`DUE: [${item.action}] ${item.title}`, 'warning');
+            queueNeedsRefresh = true;
+          }
+        });
+
+        if (queueNeedsRefresh) {
+          loadQueue();
+        }
+      };
+    }, 4000);
+  </script>
+</body>
+</html>

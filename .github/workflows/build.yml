@@ -25,57 +25,37 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
 
-      - name: Set up Icon Generator Dependencies
+      - name: Install Android SDK Packages
+        run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
+          "$SDKMANAGER" "platforms;android-36" "build-tools;36.0.0" "platform-tools"
+
+      - name: Install Icon Generator Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y fonts-dejavu-core
-          python3 -m pip install pillow
+          python3 -m pip install --break-system-packages pillow
 
-      - name: Initialize Capacitor App
+      - name: Install Capacitor Toolchain
+        run: npm ci
+
+      - name: Assemble Web Assets
         run: |
-          npm init -y
-          npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/local-notifications
+          rm -rf www
           mkdir -p www
           cp index.html www/
-          cat << 'EOF' > capacitor.config.json
-          {
-            "appId": "com.panicbutton.app",
-            "appName": "e-Walnut",
-            "webDir": "www",
-            "plugins": {
-              "LocalNotifications": {
-                "smallIcon": "ic_launcher_round",
-                "iconColor": "#8B5000",
-                "sound": "beep.wav"
-              }
-            }
-          }
-          EOF
+          # Offline font copies; the CDN <link> tags stay as the online fallback.
+          python3 tools/bundle_fonts.py
+
+      - name: Generate Android Project
+        run: |
           npx cap add android
           npx cap sync android
+          python3 tools/patch_manifest.py
           echo "org.gradle.java.home=$JAVA_HOME" >> android/gradle.properties
-
-          sed -i '/' android/app/src/main/AndroidManifest.xml
-          sed -i '/' android/app/src/main/AndroidManifest.xml
-          sed -i '/' android/app/src/main/AndroidManifest.xml
-          sed -i '/' android/app/src/main/AndroidManifest.xml
-
-          sed -i 's/.*<\/string>/e-Walnut<\/string>/' android/app/src/main/res/values/strings.xml
-          sed -i 's/.*<\/string>/e-Walnut<\/string>/' android/app/src/main/res/values/strings.xml
-
-          cat << 'EOF' >> android/build.gradle
-
-          allprojects {
-              configurations.all {
-                  resolutionStrategy {
-                      force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
-                      force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22'
-                      force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'
-                  }
-              }
-          }
-          EOF
 
       - name: Generate e-Walnut App Icons
         run: |
@@ -125,7 +105,15 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug -Dorg.gradle.java.home=$JAVA_HOME
 
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: e-walnut-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
       - name: Publish Direct APK Release
+        if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest

@@ -1,0 +1,20 @@
+{
+  "name": "e-walnut",
+  "version": "1.0.0",
+  "description": "The Great Reminder App - two-tap reminder capture with native Android alarms",
+  "private": true,
+  "scripts": {
+    "www": "rm -rf www && mkdir -p www && cp index.html www/ && python3 tools/bundle_fonts.py",
+    "android:add": "npx cap add android && python3 tools/patch_manifest.py",
+    "sync": "npx cap sync android && python3 tools/patch_manifest.py",
+    "apk": "cd android && ./gradlew assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.3",
+    "@capacitor/core": "8.5.3",
+    "@capacitor/local-notifications": "8.3.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.3"
+  }
+}
