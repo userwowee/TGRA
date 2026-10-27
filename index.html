@@ -240,6 +240,51 @@
       font-weight: 600;
     }
 
+    /* Background-alarm status bar */
+    .native-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 6px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      background-color: var(--md-sys-color-surface-container);
+      color: var(--md-sys-color-on-surface-variant);
+      border: 1px solid var(--md-sys-color-outline-variant);
+    }
+    .native-status .material-symbols-rounded {
+      font-size: 17px;
+    }
+    .native-status.ready {
+      background-color: var(--md-sys-color-tertiary-container);
+      color: var(--md-sys-color-on-tertiary-container);
+      border-color: var(--md-sys-color-tertiary-container);
+    }
+    .native-status.blocked {
+      background-color: var(--md-sys-color-error-container);
+      color: var(--md-sys-color-on-error-container);
+      border-color: #F2B8B5;
+    }
+    .native-status-text {
+      flex: 1;
+    }
+    .btn-test {
+      border: 1px solid currentColor;
+      background: transparent;
+      color: inherit;
+      font-family: 'Roboto', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+    .btn-test:active {
+      transform: scale(0.95);
+    }
+
     /* Reminders Queue Section */
     .queue-section {
       margin-top: 14px;
@@ -527,6 +572,13 @@
         <button class="m3-btn btn-filled time-btn" data-mins="30240">3 Weeks</button>
       </div>
 
+      <!-- Background alarm status: never let a silent failure look like success -->
+      <div class="native-status" id="nativeStatus">
+        <span class="material-symbols-rounded" id="nativeStatusIcon">alarm</span>
+        <span class="native-status-text" id="nativeStatusText">Checking background alarms…</span>
+        <button class="btn-test hidden" id="testBtn">Test</button>
+      </div>
+
       <!-- Reminders in Queue Header -->
       <section class="queue-section">
         <div class="queue-header">
@@ -545,6 +597,9 @@
     </main>
 
   </div>
+
+  <!-- Capacitor runtime + LocalNotifications plugin, bundled at build time -->
+  <script src="native.js"></script>
 
   <script>
     const PREF_SOUND = 'ewalnut.sound';
@@ -575,10 +630,11 @@
       }
     }
 
-    // Capacitor Native Bridge Detection (resolved lazily: the bridge is injected
-    // by the Android WebView, and is absent in a plain browser)
+    // The plugin object comes from native.js. window.Capacitor alone is not
+    // enough: the WebView bridge leaves Capacitor.Plugins empty, so reading it
+    // directly yields undefined and every native call is silently skipped.
     function nativeNotifications() {
-      return window.Capacitor?.Plugins?.LocalNotifications || null;
+      return window.EWalnutNative?.LocalNotifications || null;
     }
 
     // Initialize Native Android Notification Channels & Permissions (once)
@@ -625,10 +681,67 @@
       // OS: reconcile the queue when the app comes back into view.
       plugin.addListener('localNotificationReceived', () => markDueAsAlerted());
       plugin.addListener('localNotificationActionPerformed', () => markDueAsAlerted());
+
+      const granted = await plugin.checkPermissions();
+      setNativeStatus(granted.display === 'granted' ? 'ready' : 'blocked');
+    }
+
+    // The status bar states what the OS will actually do, so a silent failure
+    // cannot be mistaken for a working reminder.
+    function setNativeStatus(state) {
+      const bar = document.getElementById('nativeStatus');
+      const text = document.getElementById('nativeStatusText');
+      const icon = document.getElementById('nativeStatusIcon');
+      const testBtn = document.getElementById('testBtn');
+
+      bar.classList.remove('ready', 'blocked');
+
+      if (state === 'ready') {
+        bar.classList.add('ready');
+        icon.innerText = 'alarm_on';
+        text.innerText = 'Background alarms are on';
+        testBtn.classList.remove('hidden');
+      } else if (state === 'blocked') {
+        bar.classList.add('blocked');
+        icon.innerText = 'notifications_off';
+        text.innerText = 'Notifications are blocked in Android settings';
+        testBtn.classList.remove('hidden');
+      } else {
+        icon.innerText = 'public';
+        text.innerText = 'Browser preview: alerts only while this page is open';
+        testBtn.classList.add('hidden');
+      }
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      initNativeNotificationEngine();
+      if (nativeNotifications()) {
+        initNativeNotificationEngine();
+      } else {
+        setNativeStatus('web');
+      }
+
+      // Fires a real OS notification 15 seconds out, so background delivery can
+      // be checked in seconds instead of waiting out a reminder.
+      document.getElementById('testBtn').addEventListener('click', async () => {
+        const plugin = nativeNotifications();
+        if (!plugin) return;
+        await initNativeNotificationEngine();
+        try {
+          await plugin.schedule({
+            notifications: [{
+              id: 2147483000,
+              title: 'e-Walnut test',
+              body: 'Background alarms are working.',
+              schedule: { at: new Date(Date.now() + 15000), allowWhileIdle: true },
+              channelId: notificationsSoundActive ? CHANNEL_LOUD : CHANNEL_QUIET
+            }]
+          });
+          showAlert('Test alert in 15s - close the app now', 'success');
+        } catch (err) {
+          console.warn('Test notification failed:', err);
+          showAlert('Android refused the test alarm', 'warning');
+        }
+      });
     });
 
     document.addEventListener('visibilitychange', () => {

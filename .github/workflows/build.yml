@@ -47,6 +47,10 @@ jobs:
           rm -rf www
           mkdir -p www
           cp index.html www/
+          # The Capacitor runtime and the LocalNotifications plugin. Without this
+          # bundle the WebView's Capacitor.Plugins stays empty and no reminder
+          # ever reaches the Android alarm scheduler.
+          npx esbuild src/native.js --bundle --minify --format=iife --outfile=www/native.js
           # Offline font copies; the CDN <link> tags stay as the online fallback.
           python3 tools/bundle_fonts.py
 

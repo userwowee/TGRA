@@ -17,7 +17,10 @@ with the Android alarm scheduler so it fires even when the app is closed.
 3. Tap an interval (15 Mins … 3 Weeks, End of Day, Next Noon, …). The reminder is queued.
 4. In the queue, **Done** or **Cancel** removes a reminder. **Procrastinator** reveals a
    **+1 Hr** button on every card.
-5. The bell in the app bar switches between sound+vibrate and quiet. It applies to
+5. The bar above the queue says whether Android will alert you in the background.
+   Green means yes; the **Test** button next to it fires a real notification 15
+   seconds later so you can close the app and check.
+6. The bell in the app bar switches between sound+vibrate and quiet. It applies to
    reminders created after the switch, because an Android notification channel's sound
    cannot be changed once the channel exists — the two modes are two channels.
 
@@ -40,6 +43,10 @@ npm run apk          # android/app/build/outputs/apk/debug/app-debug.apk
 
 `android/` and `www/` are generated, never committed.
 
+* `src/native.js` is bundled to `www/native.js` with esbuild. It is what makes
+  `LocalNotifications` exist in the page: the Android WebView injects
+  `window.Capacitor` but leaves `Capacitor.Plugins` empty, so without this bundle
+  every native call is silently skipped and no reminder reaches the OS.
 * `tools/bundle_fonts.py` downloads Roboto and Material Symbols Rounded into
   `www/fonts/` so icons render with no network. The Google Fonts `<link>` tags stay in
   `index.html` as the online fallback. Font-CDN failures do not fail the build.

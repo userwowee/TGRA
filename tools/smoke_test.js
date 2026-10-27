@@ -123,6 +123,72 @@ function check(name, ok, detail) {
   check('cancel removes the card', (await page.textContent('#queueCount')).trim() === '0');
   check('empty state returns', (await page.locator('.queue-empty').count()) === 1);
 
+  // Native wiring: with a stub plugin in place, scheduling must reach it.
+  // Regression guard for the bug where Capacitor.Plugins was empty and every
+  // native call was silently skipped.
+  const STUB_NATIVE = `
+    const calls = { schedule: [], channels: [], cancel: [], listeners: [] };
+    window.__calls = calls;
+    window.EWalnutNative = {
+      isNative: true,
+      LocalNotifications: {
+        checkPermissions: async () => ({ display: 'granted' }),
+        requestPermissions: async () => ({ display: 'granted' }),
+        createChannel: async (c) => { calls.channels.push(c.id); },
+        addListener: (name) => { calls.listeners.push(name); return { remove() {} }; },
+        schedule: async (opts) => { calls.schedule.push(opts.notifications[0]); return {}; },
+        cancel: async (opts) => { calls.cancel.push(opts.notifications[0].id); }
+      }
+    };
+  `;
+
+  const nativePage = await browser.newPage({ viewport: { width: 412, height: 915 } });
+  // Serve a recording stub in place of the real bundle: this exercises the page's
+  // wiring to window.EWalnutNative, which is where the bug was.
+  await nativePage.route('**/native.js', route =>
+    route.fulfill({ body: STUB_NATIVE, contentType: 'application/javascript' }));
+  await nativePage.goto('http://127.0.0.1:8099/', { waitUntil: 'load' });
+  await nativePage.waitForTimeout(500);
+
+  const channels = await nativePage.evaluate(() => window.__calls.channels);
+  check('both notification channels created', channels.includes('ewalnut_alerts') && channels.includes('ewalnut_quiet'), channels.join(','));
+  check('notification listeners registered', (await nativePage.evaluate(() => window.__calls.listeners.length)) === 2);
+  check('status bar reports alarms on', (await nativePage.textContent('#nativeStatusText')).includes('Background alarms are on'));
+  check('test button offered on device', (await nativePage.locator('#testBtn:not(.hidden)').count()) === 1);
+
+  await nativePage.click('.action-btn[data-action="Health"]');
+  await nativePage.fill('#taskInput', 'Pills');
+  await nativePage.click('.time-btn[data-mins="60"]');
+  await nativePage.waitForTimeout(500);
+
+  const scheduled = await nativePage.evaluate(() => window.__calls.schedule[0]);
+  check('reminder reached the OS scheduler', !!scheduled, JSON.stringify(scheduled || null));
+  check('scheduled on the loud channel', scheduled && scheduled.channelId === 'ewalnut_alerts', scheduled && scheduled.channelId);
+  check('scheduled an hour out', scheduled && Math.abs(new Date(scheduled.schedule.at).getTime() - Date.now() - 3600000) < 20000);
+  check('scheduled with the task text', scheduled && scheduled.body === 'Pills', scheduled && scheduled.body);
+  check('exact alarm requested', scheduled && scheduled.schedule.allowWhileIdle === true);
+
+  await nativePage.click('#testBtn');
+  await nativePage.waitForTimeout(400);
+  const testCall = await nativePage.evaluate(() => window.__calls.schedule[1]);
+  check('test button fires a real notification', !!testCall && Math.abs(new Date(testCall.schedule.at).getTime() - Date.now() - 15000) < 10000);
+
+  // Quiet mode routes to the silent channel
+  await nativePage.click('#bellBtn');
+  await nativePage.click('.action-btn[data-action="Pray"]');
+  await nativePage.click('.time-btn[data-mins="30"]');
+  await nativePage.waitForTimeout(500);
+  const quiet = await nativePage.evaluate(() => window.__calls.schedule.at(-1));
+  check('quiet mode uses the quiet channel', quiet && quiet.channelId === 'ewalnut_quiet', quiet && quiet.channelId);
+
+  await nativePage.locator('.card-act-btn.done').first().click();
+  await nativePage.waitForTimeout(400);
+  check('done cancels the OS alarm', (await nativePage.evaluate(() => window.__calls.cancel.length)) >= 1);
+  await nativePage.close();
+
+  check('browser build shows preview notice', (await page.textContent('#nativeStatusText')).includes('Browser preview'));
+  check('test button hidden in browser', (await page.locator('#testBtn.hidden').count()) === 1);
+
   // Layout sanity
   const layout = await page.evaluate(() => {
     const el = document.querySelector('.screen-container');
